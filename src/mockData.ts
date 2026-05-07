@@ -36,6 +36,10 @@ export type FeedbackItem = {
   avatar?: string;
 };
 
+export type CommunityFeedback = FeedbackItem & {
+  id: string;
+};
+
 export const mockNodes: CampusNode[] = [
   {
     id: 'gate-main',
@@ -247,5 +251,32 @@ export const mockMembers: TeamMember[] = [
     role: 'Data Mapping',
     bio: 'Thu thap toa do va xay dung du lieu diem den.',
     avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=300&q=80'
+  }
+];
+
+export const mockCommunityFeedbacks: CommunityFeedback[] = [
+  {
+    id: 'cf-001',
+    user: 'Minh Anh',
+    rating: 5,
+    comment: 'Giao diện dễ dùng, tìm phòng rất nhanh.',
+    createdAt: '2026-05-06 09:20',
+    avatar: 'https://images.unsplash.com/photo-1544723795-3fb6469f5b39?auto=format&fit=crop&w=200&q=80'
+  },
+  {
+    id: 'cf-002',
+    user: 'Lan Chi',
+    rating: 4,
+    comment: 'Bản đồ rõ ràng, hi vọng bổ sung thêm nhiều điểm hơn.',
+    createdAt: '2026-05-06 14:05',
+    avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=200&q=80'
+  },
+  {
+    id: 'cf-003',
+    user: 'Nam Phong',
+    rating: 5,
+    comment: 'Trang phản hồi đẹp và gửi form ổn định.',
+    createdAt: '2026-05-07 08:42',
+    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80'
   }
 ];

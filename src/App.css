@@ -1029,6 +1029,53 @@ select:focus {
   color: #334155;
 }
 
+.communityFeedbackList {
+  margin-top: 8px;
+  display: grid;
+  gap: 8px;
+  max-height: 290px;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.communityFeedbackItem {
+  border: 1px solid #c9dbf4;
+  border-radius: 10px;
+  padding: 9px;
+  background: rgba(255, 255, 255, 0.82);
+}
+
+.communityFeedbackHead {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.communityFeedbackAvatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  object-fit: cover;
+  border: 1px solid #bad1f1;
+}
+
+.communityFeedbackAvatar.fallback {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+}
+
+.communityFeedbackItem span {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.communityFeedbackItem p {
+  margin: 6px 0 0;
+  font-size: 0.9rem;
+}
+
 .feedbackContact {
   margin-top: 14px;
   display: grid;
@@ -1671,6 +1718,15 @@ select:focus {
 .app.dark .feedbackContact span {
   border-color: #345173;
   background: rgba(11, 23, 43, 0.7);
+}
+
+.app.dark .communityFeedbackItem {
+  border-color: #355074;
+  background: rgba(8, 20, 40, 0.72);
+}
+
+.app.dark .communityFeedbackAvatar {
+  border-color: #3d5f8b;
 }
 
 .app.dark .memberAvatar {

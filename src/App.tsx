@@ -1,7 +1,7 @@
  import React, { useCallback, useMemo, useState } from 'react';
 import { CircleMarker, MapContainer, Popup, TileLayer, Tooltip } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
-import { mockEdges, mockMembers, mockNodes, type CampusNode, type FeedbackItem, type TeamMember } from './mockData';
+import { mockCommunityFeedbacks, mockEdges, mockMembers, mockNodes, type CampusNode, type CommunityFeedback, type TeamMember } from './mockData';
 import './App.css';
 type RouteView = 'landing' | 'map' | 'about' | 'feedback' | 'admin' | 'detail';
 type RouteState = { view: RouteView; detailId: string };
@@ -29,13 +29,8 @@ const MEMBER_AVATAR_FALLBACKS = [
   'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=300&q=80',
   'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=300&q=80'
 ];
-const FEEDBACK_AVATAR_FALLBACKS = [
-  'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=200&q=80',
-  'https://images.unsplash.com/photo-1544723795-3fb6469f5b39?auto=format&fit=crop&w=200&q=80',
-  'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80',
-  'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=200&q=80'
-];
 const INTRO_VIDEO_EMBED_URL = 'https://www.youtube.com/embed/DSNvqbEhwHk?rel=0';
+const FEEDBACK_STORAGE_KEY = 'vnu-map-community-feedback-v1';
 const LANGUAGE_OPTIONS: Array<{ value: Language; label: string; icon: string }> = [
   { value: 'vi', label: 'Tiếng Việt', icon: 'https://flagcdn.com/w40/vn.png' },
   { value: 'en', label: 'English', icon: 'https://flagcdn.com/w40/gb.png' },
@@ -113,6 +108,7 @@ const TEXT = {
     adminHint: 'Path ẩn: `/adminDashboard`. Sau khi sửa, bấm "Xuất mockData JSON" để lưu file dữ liệu.',
     adminMembers: 'Dữ liệu về chúng tôi',
     adminLocationData: 'Dữ liệu địa danh',
+    adminCommunityFeedbackData: 'Dữ liệu feedback người dùng',
     adminDetailManager: 'Quản lý chi tiết địa điểm',
     selectLocationDetail: 'Chọn địa điểm',
     feedbackManager: 'Quản lý phản hồi',
@@ -134,6 +130,7 @@ const TEXT = {
     all: 'Tất cả',
     locationDataFilter: 'Dữ liệu địa danh',
     membersDataFilter: 'Dữ liệu về chúng tôi',
+    feedbacksDataFilter: 'Dữ liệu feedback',
     footerSchool: 'Đại học Quốc gia Hà Nội - Trường Đại học Ngoại ngữ',
     footerAddress: 'Địa chỉ',
     footerAddressValue: 'Số 2 đường Phạm Văn Đồng, Phường Cầu Giấy, Hà Nội',
@@ -217,6 +214,7 @@ const TEXT = {
     adminHint: 'Hidden path: `/adminDashboard`. Export JSON after editing to save your mock data.',
     adminMembers: 'About us data',
     adminLocationData: 'Location data',
+    adminCommunityFeedbackData: 'User feedback data',
     adminDetailManager: 'Location detail manager',
     selectLocationDetail: 'Select location',
     feedbackManager: 'Feedback manager',
@@ -238,6 +236,7 @@ const TEXT = {
     all: 'All',
     locationDataFilter: 'Location data',
     membersDataFilter: 'About us data',
+    feedbacksDataFilter: 'Feedback data',
     footerSchool: 'VNU University of Languages and International Studies',
     footerAddress: 'Address',
     footerAddressValue: 'No. 2 Pham Van Dong Street, Cau Giay Ward, Ha Noi',
@@ -321,6 +320,7 @@ const TEXT = {
     adminHint: '隐藏路径: `/adminDashboard`。编辑后导出 JSON 保存数据。',
     adminMembers: '关于我们数据',
     adminLocationData: '地点数据',
+    adminCommunityFeedbackData: '用户反馈数据',
     adminDetailManager: '地点详情管理',
     selectLocationDetail: '选择地点',
     feedbackManager: '反馈管理',
@@ -342,6 +342,7 @@ const TEXT = {
     all: '全部',
     locationDataFilter: '地点数据',
     membersDataFilter: '关于我们数据',
+    feedbacksDataFilter: '反馈数据',
     footerSchool: '河内国家大学 - 外国语大学',
     footerAddress: '地址',
     footerAddressValue: '河内市纸桥郡范文同路 2 号',
@@ -425,6 +426,7 @@ const TEXT = {
     adminHint: '숨겨진 경로: `/adminDashboard`. 수정 후 JSON으로 저장하세요.',
     adminMembers: '소개 데이터',
     adminLocationData: '위치 데이터',
+    adminCommunityFeedbackData: '사용자 피드백 데이터',
     adminDetailManager: '위치 상세 관리',
     selectLocationDetail: '위치 선택',
     feedbackManager: '피드백 관리',
@@ -446,6 +448,7 @@ const TEXT = {
     all: '전체',
     locationDataFilter: '위치 데이터',
     membersDataFilter: '소개 데이터',
+    feedbacksDataFilter: '피드백 데이터',
     footerSchool: '하노이국립대학교 - 외국어대학교',
     footerAddress: '주소',
     footerAddressValue: '하노이 Cau Giay, Pham Van Dong 2번지',
@@ -529,6 +532,7 @@ const TEXT = {
     adminHint: '隠しパス: `/adminDashboard`。編集後に JSON をエクスポートしてください。',
     adminMembers: 'メンバーデータ',
     adminLocationData: '地点データ',
+    adminCommunityFeedbackData: 'ユーザーフィードバックデータ',
     adminDetailManager: '地点詳細管理',
     selectLocationDetail: '地点を選択',
     feedbackManager: 'フィードバック管理',
@@ -550,6 +554,7 @@ const TEXT = {
     all: 'すべて',
     locationDataFilter: '地点データ',
     membersDataFilter: 'メンバーデータ',
+    feedbacksDataFilter: 'フィードバックデータ',
     footerSchool: 'ハノイ国家大学 - 外国語大学',
     footerAddress: '住所',
     footerAddressValue: 'ハノイ市カウザイ区ファムヴァンドン通り2番',
@@ -657,18 +662,11 @@ function dijkstra(start: string, end: string, nodes: CampusNode[]) {
 
 function hydrateNode(rawNode: Partial<CampusNode>): CampusNode {
   const fallback = mockNodes.find((item) => item.id === rawNode.id) ?? mockNodes[0];
-  const normalizedFeedbacks = (Array.isArray(rawNode.feedbacks) ? rawNode.feedbacks : fallback.feedbacks).map((item, index) => ({
-    ...item,
-    avatar:
-      typeof item.avatar === 'string' && item.avatar.trim()
-        ? item.avatar
-        : FEEDBACK_AVATAR_FALLBACKS[index % FEEDBACK_AVATAR_FALLBACKS.length]
-  }));
   return {
     ...fallback,
     ...rawNode,
     aliases: Array.isArray(rawNode.aliases) ? rawNode.aliases : fallback.aliases,
-    feedbacks: normalizedFeedbacks,
+    feedbacks: Array.isArray(rawNode.feedbacks) ? rawNode.feedbacks : fallback.feedbacks,
     rating: typeof rawNode.rating === 'number' ? rawNode.rating : fallback.rating,
     openingHour: typeof rawNode.openingHour === 'string' ? rawNode.openingHour : fallback.openingHour,
     closingHour: typeof rawNode.closingHour === 'string' ? rawNode.closingHour : fallback.closingHour,
@@ -685,6 +683,23 @@ function hydrateNodes(rawNodes: unknown): CampusNode[] {
   }
   return rawNodes.map((item) => hydrateNode(item as Partial<CampusNode>));
 }
+function hydrateCommunityFeedbacks(rawFeedbacks: unknown): CommunityFeedback[] {
+  if (!Array.isArray(rawFeedbacks)) {
+    return mockCommunityFeedbacks;
+  }
+  return rawFeedbacks.map((item, index) => {
+    const feedback = item as Partial<CommunityFeedback>;
+    const fallback = mockCommunityFeedbacks[index % mockCommunityFeedbacks.length];
+    return {
+      id: typeof feedback.id === 'string' && feedback.id ? feedback.id : `cf-${Date.now()}-${index}`,
+      user: typeof feedback.user === 'string' ? feedback.user : fallback.user,
+      rating: typeof feedback.rating === 'number' ? feedback.rating : fallback.rating,
+      comment: typeof feedback.comment === 'string' ? feedback.comment : fallback.comment,
+      createdAt: typeof feedback.createdAt === 'string' ? feedback.createdAt : fallback.createdAt,
+      avatar: typeof feedback.avatar === 'string' ? feedback.avatar : fallback.avatar
+    };
+  });
+}
 
 function App() {
   const [nodes, setNodes] = useState<CampusNode[]>(() => {
@@ -700,13 +715,25 @@ function App() {
   const [language, setLanguage] = useState<Language>('vi');
   const [themeMode, setThemeMode] = useState<ThemeMode>('light');
   const [members, setMembers] = useState<TeamMember[]>(mockMembers);
+  const [communityFeedbacks, setCommunityFeedbacks] = useState<CommunityFeedback[]>(() => {
+    const raw = localStorage.getItem(FEEDBACK_STORAGE_KEY);
+    if (!raw) return mockCommunityFeedbacks;
+    try {
+      return hydrateCommunityFeedbacks(JSON.parse(raw));
+    } catch {
+      return mockCommunityFeedbacks;
+    }
+  });
   const [nodeEditor, setNodeEditor] = useState<CampusNode | null>(null);
   const [nodeEditorMode, setNodeEditorMode] = useState<'create' | 'edit'>('edit');
   const [nodeEditorOriginalId, setNodeEditorOriginalId] = useState<string | null>(null);
   const [memberEditor, setMemberEditor] = useState<TeamMember | null>(null);
   const [memberEditorMode, setMemberEditorMode] = useState<'create' | 'edit'>('edit');
   const [memberEditorIndex, setMemberEditorIndex] = useState<number | null>(null);
-  const [adminDataFilter, setAdminDataFilter] = useState<'all' | 'locations' | 'members'>('all');
+  const [communityFeedbackEditor, setCommunityFeedbackEditor] = useState<CommunityFeedback | null>(null);
+  const [communityFeedbackEditorMode, setCommunityFeedbackEditorMode] = useState<'create' | 'edit'>('edit');
+  const [communityFeedbackEditorId, setCommunityFeedbackEditorId] = useState<string | null>(null);
+  const [adminDataFilter, setAdminDataFilter] = useState<'all' | 'locations' | 'members' | 'feedbacks'>('all');
   const [mapQuery, setMapQuery] = useState('');
   const [landingQuery, setLandingQuery] = useState('');
   const [landingTypeFilter, setLandingTypeFilter] = useState<string>('all');
@@ -760,6 +787,7 @@ function App() {
     });
   }, [landingQuery, landingTypeFilter, nodes]);
   React.useEffect(() => localStorage.setItem(STORAGE_KEY, JSON.stringify(nodes)), [nodes]);
+  React.useEffect(() => localStorage.setItem(FEEDBACK_STORAGE_KEY, JSON.stringify(communityFeedbacks)), [communityFeedbacks]);
   React.useEffect(() => {
     const onPopState = () => setRouteState(resolveRouteState(window.location.pathname));
     window.addEventListener('popstate', onPopState);
@@ -826,43 +854,6 @@ function App() {
     setNodeEditor(null);
     setNodeEditorOriginalId(null);
   };
-  const addNodeEditorFeedback = () => {
-    setNodeEditor((current) => {
-      if (!current) return current;
-      const nextIndex = current.feedbacks.length;
-      return {
-        ...current,
-        feedbacks: [
-          ...current.feedbacks,
-          {
-            user: language === 'vi' ? 'Người dùng mới' : 'New user',
-            rating: 5,
-            comment: '',
-            createdAt: new Date().toISOString().slice(0, 10),
-            avatar: FEEDBACK_AVATAR_FALLBACKS[nextIndex % FEEDBACK_AVATAR_FALLBACKS.length]
-          }
-        ]
-      };
-    });
-  };
-  const updateNodeEditorFeedback = (index: number, patch: Partial<CampusNode['feedbacks'][number]>) => {
-    setNodeEditor((current) => {
-      if (!current) return current;
-      return {
-        ...current,
-        feedbacks: current.feedbacks.map((item, i) => (i === index ? { ...item, ...patch } : item))
-      };
-    });
-  };
-  const deleteNodeEditorFeedback = (index: number) => {
-    setNodeEditor((current) => {
-      if (!current) return current;
-      return {
-        ...current,
-        feedbacks: current.feedbacks.filter((_, i) => i !== index)
-      };
-    });
-  };
   const updateMember = (index: number, patch: Partial<TeamMember>) => {
     setMembers((current) => current.map((item, i) => (i === index ? { ...item, ...patch } : item)));
   };
@@ -903,13 +894,49 @@ function App() {
     }
   };
   const getMemberAvatar = (member: TeamMember, index: number) => member.avatar || MEMBER_AVATAR_FALLBACKS[index % MEMBER_AVATAR_FALLBACKS.length];
-  const getFeedbackAvatar = (feedback: FeedbackItem, index: number) =>
-    feedback.avatar || FEEDBACK_AVATAR_FALLBACKS[index % FEEDBACK_AVATAR_FALLBACKS.length];
+  const createCommunityFeedbackDraft = () => ({
+    id: `cf-${Date.now()}`,
+    user: language === 'vi' ? 'Người dùng mới' : 'New user',
+    rating: 5,
+    comment: '',
+    createdAt: new Date().toISOString().slice(0, 10),
+    avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=200&q=80'
+  });
+  const openCreateCommunityFeedbackEditor = () => {
+    setCommunityFeedbackEditorMode('create');
+    setCommunityFeedbackEditorId(null);
+    setCommunityFeedbackEditor(createCommunityFeedbackDraft());
+  };
+  const openEditCommunityFeedbackEditor = (feedback: CommunityFeedback) => {
+    setCommunityFeedbackEditorMode('edit');
+    setCommunityFeedbackEditorId(feedback.id);
+    setCommunityFeedbackEditor({ ...feedback });
+  };
+  const saveCommunityFeedbackEditor = () => {
+    if (!communityFeedbackEditor) return;
+    if (communityFeedbackEditorMode === 'create') {
+      setCommunityFeedbacks((current) => [...current, communityFeedbackEditor]);
+    } else if (communityFeedbackEditorId) {
+      setCommunityFeedbacks((current) =>
+        current.map((item) => (item.id === communityFeedbackEditorId ? communityFeedbackEditor : item))
+      );
+    }
+    setCommunityFeedbackEditor(null);
+    setCommunityFeedbackEditorId(null);
+  };
+  const deleteCommunityFeedback = (id: string) => {
+    setCommunityFeedbacks((current) => current.filter((item) => item.id !== id));
+    if (communityFeedbackEditorId === id) {
+      setCommunityFeedbackEditor(null);
+      setCommunityFeedbackEditorId(null);
+    }
+  };
   const exportMockData = () => {
     const payload = {
       mockNodes: nodes,
       mockEdges,
-      mockMembers: members
+      mockMembers: members,
+      mockCommunityFeedbacks: communityFeedbacks
     };
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -934,6 +961,21 @@ function App() {
       });
       if (!response.ok) {
         throw new Error('submit_failed');
+      }
+      const formData = new FormData(form);
+      const fullName = String(formData.get('fullName') ?? '').trim();
+      const feedbackText = String(formData.get('feedback') ?? '').trim();
+      if (fullName && feedbackText) {
+        setCommunityFeedbacks((current) => [
+          {
+            id: `cf-${Date.now()}`,
+            user: fullName,
+            rating: 5,
+            comment: feedbackText,
+            createdAt: new Date().toISOString().slice(0, 16).replace('T', ' ')
+          },
+          ...current
+        ]);
       }
       form.reset();
       setFeedbackStatus('success');
@@ -1100,23 +1142,6 @@ function App() {
               <div className="detailThumbRow">
                 <img src={detailNode.image} alt={detailNode.label} className="detailThumb active" />
               </div>
-              <section className="card">
-                <h3>{t.feedback}</h3>
-                <div className="feedbackList">
-                  {detailNode.feedbacks.map((item, index) => (
-                    <article key={`${item.user}-${item.createdAt}`} className="feedbackItem">
-                      <div className="feedbackHead">
-                        <img src={getFeedbackAvatar(item, index)} alt={item.user} className="feedbackAvatar" />
-                        <div>
-                          <strong>{item.user}</strong>
-                          <span>{item.rating}/5 • {item.createdAt}</span>
-                        </div>
-                      </div>
-                      <p>{item.comment}</p>
-                    </article>
-                  ))}
-                </div>
-              </section>
             </div>
             <div className="detailInfo">
               <section className="card detailHeroCard">
@@ -1130,7 +1155,7 @@ function App() {
               </section>
               <section className="card">
                 <h3>{t.detailDescription}</h3>
-                <p>{language === 'vi' ? detailNode.descriptionVi : detailNode.descriptionEn}</p>
+                <p>{detailNode.descriptionVi}</p>
               </section>
               <section className="card detailMetaGrid">
                 <article>
@@ -1336,16 +1361,20 @@ function App() {
           </section>
           <div className="feedbackLayout">
             <aside className="feedbackInfo card">
-              <h3>{t.highlights}</h3>
-              <ul className="feedbackPoints">
-                <li>{t.f1d}</li>
-                <li>{t.f2d}</li>
-                <li>{t.f3d}</li>
-              </ul>
-              <div className="feedbackContact">
-                <span><strong>{t.footerPhone}:</strong> (+84)868.433.805</span>
-                <span><strong>{t.footerEmail}:</strong> thuylinh1612006@gmail.com</span>
-                <span><strong>{t.footerAddress}:</strong> {t.footerAddressValue}</span>
+              <h3>{t.feedback}</h3>
+              <div className="communityFeedbackList">
+                {communityFeedbacks.map((item) => (
+                  <article key={item.id} className="communityFeedbackItem">
+                    <div className="communityFeedbackHead">
+                      {item.avatar ? <img src={item.avatar} alt={item.user} className="communityFeedbackAvatar" /> : <span className="communityFeedbackAvatar fallback">U</span>}
+                      <div>
+                        <strong>{item.user}</strong>
+                        <span>{item.rating}/5 • {item.createdAt}</span>
+                      </div>
+                    </div>
+                    <p>{item.comment}</p>
+                  </article>
+                ))}
               </div>
             </aside>
             <section className="aboutFeedback card">
@@ -1379,6 +1408,7 @@ function App() {
               <button type="button" className={`filterBtn ${adminDataFilter === 'all' ? 'active' : ''}`} onClick={() => setAdminDataFilter('all')}>{t.all}</button>
               <button type="button" className={`filterBtn ${adminDataFilter === 'locations' ? 'active' : ''}`} onClick={() => setAdminDataFilter('locations')}>{t.locationDataFilter}</button>
               <button type="button" className={`filterBtn ${adminDataFilter === 'members' ? 'active' : ''}`} onClick={() => setAdminDataFilter('members')}>{t.membersDataFilter}</button>
+              <button type="button" className={`filterBtn ${adminDataFilter === 'feedbacks' ? 'active' : ''}`} onClick={() => setAdminDataFilter('feedbacks')}>{t.feedbacksDataFilter}</button>
             </div>
           </section>
           {(adminDataFilter === 'all' || adminDataFilter === 'locations') && <section className="adminSection card">
@@ -1453,12 +1483,40 @@ function App() {
               </table>
             </div>
           </section>}
-          {(nodeEditor || memberEditor) && (
+          {(adminDataFilter === 'all' || adminDataFilter === 'feedbacks') && <section className="adminSection card">
+            <div className="adminSectionHead">
+              <h3>{t.adminCommunityFeedbackData}</h3>
+              <button type="button" className="sectionAddBtn" onClick={openCreateCommunityFeedbackEditor}>{t.addFeedback}</button>
+            </div>
+            <div className="adminTableWrap">
+              <table>
+                <thead><tr><th>ID</th><th>Avatar</th><th>User</th><th>Rating</th><th>Comment</th><th>Date</th><th>{t.actions}</th></tr></thead>
+                <tbody>
+                  {communityFeedbacks.map((item) => (
+                    <tr key={item.id}>
+                      <td>{item.id}</td>
+                      <td>{item.avatar}</td>
+                      <td>{item.user}</td>
+                      <td>{item.rating}</td>
+                      <td>{item.comment}</td>
+                      <td>{item.createdAt}</td>
+                      <td className="adminActionCell">
+                        <button type="button" className="neutralBtn" onClick={() => openEditCommunityFeedbackEditor(item)}>{t.edit}</button>
+                        <button type="button" className="dangerBtn" onClick={() => deleteCommunityFeedback(item.id)}>{t.delete}</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>}
+          {(nodeEditor || memberEditor || communityFeedbackEditor) && (
             <div
               className="adminModalBackdrop"
               onClick={() => {
                 setNodeEditor(null);
                 setMemberEditor(null);
+                setCommunityFeedbackEditor(null);
               }}
             >
               <section className="adminModal card" onClick={(event) => event.stopPropagation()}>
@@ -1476,28 +1534,6 @@ function App() {
                       <input value={nodeEditor.closingHour} onChange={(event) => setNodeEditor((current) => (current ? { ...current, closingHour: event.target.value } : current))} />
                       <input value={nodeEditor.rating} onChange={(event) => setNodeEditor((current) => (current ? { ...current, rating: Number(event.target.value) || current.rating } : current))} />
                       <input value={nodeEditor.descriptionVi} onChange={(event) => setNodeEditor((current) => (current ? { ...current, descriptionVi: event.target.value } : current))} />
-                      <input value={nodeEditor.descriptionEn} onChange={(event) => setNodeEditor((current) => (current ? { ...current, descriptionEn: event.target.value } : current))} />
-                    </div>
-                    <div className="adminSectionHead">
-                      <h4>{t.feedbackManager}</h4>
-                      <button type="button" className="sectionAddBtn" onClick={addNodeEditorFeedback}>{t.addFeedback}</button>
-                    </div>
-                    <div className="adminTableWrap">
-                      <table>
-                        <thead><tr><th>Avatar</th><th>User</th><th>Rating</th><th>Comment</th><th>Date</th><th>{t.actions}</th></tr></thead>
-                        <tbody>
-                          {nodeEditor.feedbacks.map((item, index) => (
-                            <tr key={`${item.user}-${index}`}>
-                              <td><input value={getFeedbackAvatar(item, index)} onChange={(event) => updateNodeEditorFeedback(index, { avatar: event.target.value })} /></td>
-                              <td><input value={item.user} onChange={(event) => updateNodeEditorFeedback(index, { user: event.target.value })} /></td>
-                              <td><input value={item.rating} onChange={(event) => updateNodeEditorFeedback(index, { rating: Number(event.target.value) || item.rating })} /></td>
-                              <td><input value={item.comment} onChange={(event) => updateNodeEditorFeedback(index, { comment: event.target.value })} /></td>
-                              <td><input value={item.createdAt} onChange={(event) => updateNodeEditorFeedback(index, { createdAt: event.target.value })} /></td>
-                              <td><button type="button" className="dangerBtn" onClick={() => deleteNodeEditorFeedback(index)}>{t.delete}</button></td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
                     </div>
                     <div className="adminEditorActions">
                       <button type="button" className="neutralBtn" onClick={() => setNodeEditor(null)}>{t.cancel}</button>
@@ -1517,6 +1553,23 @@ function App() {
                     <div className="adminEditorActions">
                       <button type="button" className="neutralBtn" onClick={() => setMemberEditor(null)}>{t.cancel}</button>
                       <button type="button" className="sectionAddBtn" onClick={saveMemberEditor}>{t.update}</button>
+                    </div>
+                  </>
+                )}
+                {communityFeedbackEditor && (
+                  <>
+                    <h4>{t.adminCommunityFeedbackData}</h4>
+                    <div className="adminEditorGrid">
+                      <input value={communityFeedbackEditor.id} onChange={(event) => setCommunityFeedbackEditor((current) => (current ? { ...current, id: event.target.value } : current))} />
+                      <input value={communityFeedbackEditor.avatar ?? ''} onChange={(event) => setCommunityFeedbackEditor((current) => (current ? { ...current, avatar: event.target.value } : current))} />
+                      <input value={communityFeedbackEditor.user} onChange={(event) => setCommunityFeedbackEditor((current) => (current ? { ...current, user: event.target.value } : current))} />
+                      <input value={communityFeedbackEditor.rating} onChange={(event) => setCommunityFeedbackEditor((current) => (current ? { ...current, rating: Number(event.target.value) || current.rating } : current))} />
+                      <input value={communityFeedbackEditor.createdAt} onChange={(event) => setCommunityFeedbackEditor((current) => (current ? { ...current, createdAt: event.target.value } : current))} />
+                      <input value={communityFeedbackEditor.comment} onChange={(event) => setCommunityFeedbackEditor((current) => (current ? { ...current, comment: event.target.value } : current))} />
+                    </div>
+                    <div className="adminEditorActions">
+                      <button type="button" className="neutralBtn" onClick={() => setCommunityFeedbackEditor(null)}>{t.cancel}</button>
+                      <button type="button" className="sectionAddBtn" onClick={saveCommunityFeedbackEditor}>{t.update}</button>
                     </div>
                   </>
                 )}
