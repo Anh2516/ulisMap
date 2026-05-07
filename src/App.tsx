@@ -1,9 +1,9 @@
  import React, { useCallback, useMemo, useState } from 'react';
 import { CircleMarker, MapContainer, Popup, TileLayer, Tooltip } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
-import { mockEdges, mockMembers, mockNodes, type CampusNode, type TeamMember } from './mockData';
+import { mockEdges, mockMembers, mockNodes, type CampusNode, type FeedbackItem, type TeamMember } from './mockData';
 import './App.css';
-type RouteView = 'landing' | 'map' | 'about' | 'admin' | 'detail';
+type RouteView = 'landing' | 'map' | 'about' | 'feedback' | 'admin' | 'detail';
 type RouteState = { view: RouteView; detailId: string };
 type Language = 'vi' | 'en' | 'zh' | 'ko' | 'ja';
 type ThemeMode = 'light' | 'dark';
@@ -16,10 +16,11 @@ const TYPE_LABELS: Record<Language, Record<string, string>> = {
   ja: { campus: 'キャンパス', gate: '門', hall: 'ホール', room: '教室', hub: 'ハブ' }
 };
 const STORAGE_KEY = 'vnu-map-nodes-v1';
-const NAV_ITEMS: Array<{ key: 'landing' | 'map' | 'about'; path: string }> = [
+const NAV_ITEMS: Array<{ key: 'landing' | 'map' | 'about' | 'feedback'; path: string }> = [
   { key: 'landing', path: '/' },
   { key: 'map', path: '/thao-tac-ban-do' },
-  { key: 'about', path: '/ve-chung-toi' }
+  { key: 'about', path: '/ve-chung-toi' },
+  { key: 'feedback', path: '/phan-hoi' }
 ];
 const BRAND_LOGO_URL =
   'https://lh3.googleusercontent.com/u/0/d/1C6K22ihxiBsgVCghJ7BHQbSWKX7VEvY_=w2560-h1398-iv1?auditContext=prefetch';
@@ -28,6 +29,13 @@ const MEMBER_AVATAR_FALLBACKS = [
   'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=300&q=80',
   'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=300&q=80'
 ];
+const FEEDBACK_AVATAR_FALLBACKS = [
+  'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=200&q=80',
+  'https://images.unsplash.com/photo-1544723795-3fb6469f5b39?auto=format&fit=crop&w=200&q=80',
+  'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80',
+  'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=200&q=80'
+];
+const INTRO_VIDEO_EMBED_URL = 'https://www.youtube.com/embed/DSNvqbEhwHk?rel=0';
 const LANGUAGE_OPTIONS: Array<{ value: Language; label: string; icon: string }> = [
   { value: 'vi', label: 'Tiếng Việt', icon: 'https://flagcdn.com/w40/vn.png' },
   { value: 'en', label: 'English', icon: 'https://flagcdn.com/w40/gb.png' },
@@ -38,7 +46,7 @@ const LANGUAGE_OPTIONS: Array<{ value: Language; label: string; icon: string }> 
 const TEXT = {
   vi: {
     brand: 'Lạc lối ở ULIS',
-    nav: { landing: 'Trang chủ', map: 'Thao tác bản đồ', about: 'Về chúng tôi' },
+    nav: { landing: 'Trang chủ', map: 'Thao tác bản đồ', about: 'Về chúng tôi', feedback: 'Phản hồi' },
     heroKicker: 'Bản đồ thông minh - cập nhật mỗi tuần',
     heroTitle: 'Tìm đường trong ULIS nhanh và rõ ràng',
     heroDesc:
@@ -51,6 +59,7 @@ const TEXT = {
     f2d: 'Thông tin rõ ràng, dễ kiểm tra trước khi di chuyển đến tòa nhà.',
     f3t: 'Đồng hành',
     f3d: 'Popup thông tin và liên kết Google Maps trong một lần chạm.',
+    introVideo: 'Video giới thiệu',
     catalogTitle: 'Danh mục địa điểm nổi bật',
     catalogDesc: 'Chọn thẻ để mở trang thông tin chi tiết cho từng địa điểm trong hệ thống.',
     landingSearchPlaceholder: 'Tìm địa điểm trên trang chủ...',
@@ -141,7 +150,7 @@ const TEXT = {
   },
   en: {
     brand: 'Lost at ULIS',
-    nav: { landing: 'Home', map: 'Map Actions', about: 'About Us' },
+    nav: { landing: 'Home', map: 'Map Actions', about: 'About Us', feedback: 'Feedback' },
     heroKicker: 'Smart map - updated weekly',
     heroTitle: 'Find your way around ULIS quickly',
     heroDesc:
@@ -154,6 +163,7 @@ const TEXT = {
     f2d: 'Clear location information before moving to any building.',
     f3t: 'Companion',
     f3d: 'One-tap detail popup and Google Maps integration.',
+    introVideo: 'Introduction video',
     catalogTitle: 'Featured locations',
     catalogDesc: 'Select a card to open detailed information for each location.',
     landingSearchPlaceholder: 'Search locations on home page...',
@@ -244,7 +254,7 @@ const TEXT = {
   },
   zh: {
     brand: '迷路在 ULIS',
-    nav: { landing: '首页', map: '地图操作', about: '关于我们' },
+    nav: { landing: '首页', map: '地图操作', about: '关于我们', feedback: '反馈' },
     heroKicker: '智能地图 - 每周更新',
     heroTitle: '快速清晰地找到 ULIS 路线',
     heroDesc:
@@ -257,6 +267,7 @@ const TEXT = {
     f2d: '出发前先查看清晰地点信息。',
     f3t: '陪伴',
     f3d: '一次点击即可查看详情并打开 Google Maps。',
+    introVideo: '介绍视频',
     catalogTitle: '热门地点目录',
     catalogDesc: '选择卡片查看每个地点的详细信息。',
     landingSearchPlaceholder: '在首页搜索地点...',
@@ -347,7 +358,7 @@ const TEXT = {
   },
   ko: {
     brand: 'ULIS 길찾기',
-    nav: { landing: '홈', map: '지도 조작', about: '소개' },
+    nav: { landing: '홈', map: '지도 조작', about: '소개', feedback: '피드백' },
     heroKicker: '스마트 지도 - 주간 업데이트',
     heroTitle: 'ULIS 길찾기를 빠르고 명확하게',
     heroDesc:
@@ -360,6 +371,7 @@ const TEXT = {
     f2d: '이동 전에 위치 정보를 명확히 확인할 수 있습니다.',
     f3t: '동행',
     f3d: '한 번의 클릭으로 상세 정보와 Google Maps 연결.',
+    introVideo: '소개 영상',
     catalogTitle: '주요 위치 목록',
     catalogDesc: '카드를 선택해 각 위치의 상세 정보를 확인하세요.',
     landingSearchPlaceholder: '홈에서 위치 검색...',
@@ -450,7 +462,7 @@ const TEXT = {
   },
   ja: {
     brand: 'ULIS 迷子ナビ',
-    nav: { landing: 'ホーム', map: '地図操作', about: '私たちについて' },
+    nav: { landing: 'ホーム', map: '地図操作', about: '私たちについて', feedback: 'フィードバック' },
     heroKicker: 'スマートマップ - 毎週更新',
     heroTitle: 'ULIS での道案内を素早く明確に',
     heroDesc:
@@ -463,6 +475,7 @@ const TEXT = {
     f2d: '移動前に位置情報を明確に確認できます。',
     f3t: '伴走',
     f3d: 'ワンタップで詳細表示と Google Maps 連携。',
+    introVideo: '紹介動画',
     catalogTitle: '注目スポット',
     catalogDesc: 'カードを選択して各地点の詳細を表示します。',
     landingSearchPlaceholder: 'ホームで地点検索...',
@@ -573,6 +586,7 @@ function getMarkerColor(type: string) {
 function getRouteFromPath(pathname: string): RouteView {
   if (pathname === '/thao-tac-ban-do') return 'map';
   if (pathname === '/ve-chung-toi') return 'about';
+  if (pathname === '/phan-hoi') return 'feedback';
   if (pathname === '/adminDashboard') return 'admin';
   if (pathname.startsWith('/dia-diem/')) return 'detail';
   return 'landing';
@@ -643,11 +657,18 @@ function dijkstra(start: string, end: string, nodes: CampusNode[]) {
 
 function hydrateNode(rawNode: Partial<CampusNode>): CampusNode {
   const fallback = mockNodes.find((item) => item.id === rawNode.id) ?? mockNodes[0];
+  const normalizedFeedbacks = (Array.isArray(rawNode.feedbacks) ? rawNode.feedbacks : fallback.feedbacks).map((item, index) => ({
+    ...item,
+    avatar:
+      typeof item.avatar === 'string' && item.avatar.trim()
+        ? item.avatar
+        : FEEDBACK_AVATAR_FALLBACKS[index % FEEDBACK_AVATAR_FALLBACKS.length]
+  }));
   return {
     ...fallback,
     ...rawNode,
     aliases: Array.isArray(rawNode.aliases) ? rawNode.aliases : fallback.aliases,
-    feedbacks: Array.isArray(rawNode.feedbacks) ? rawNode.feedbacks : fallback.feedbacks,
+    feedbacks: normalizedFeedbacks,
     rating: typeof rawNode.rating === 'number' ? rawNode.rating : fallback.rating,
     openingHour: typeof rawNode.openingHour === 'string' ? rawNode.openingHour : fallback.openingHour,
     closingHour: typeof rawNode.closingHour === 'string' ? rawNode.closingHour : fallback.closingHour,
@@ -752,7 +773,7 @@ function App() {
   }, []);
 
   const isNavActive = useCallback(
-    (key: 'landing' | 'map' | 'about') => {
+    (key: 'landing' | 'map' | 'about' | 'feedback') => {
       if (key === 'landing') {
         return routeState.view === 'landing' || routeState.view === 'detail';
       }
@@ -808,6 +829,7 @@ function App() {
   const addNodeEditorFeedback = () => {
     setNodeEditor((current) => {
       if (!current) return current;
+      const nextIndex = current.feedbacks.length;
       return {
         ...current,
         feedbacks: [
@@ -816,7 +838,8 @@ function App() {
             user: language === 'vi' ? 'Người dùng mới' : 'New user',
             rating: 5,
             comment: '',
-            createdAt: new Date().toISOString().slice(0, 10)
+            createdAt: new Date().toISOString().slice(0, 10),
+            avatar: FEEDBACK_AVATAR_FALLBACKS[nextIndex % FEEDBACK_AVATAR_FALLBACKS.length]
           }
         ]
       };
@@ -880,6 +903,8 @@ function App() {
     }
   };
   const getMemberAvatar = (member: TeamMember, index: number) => member.avatar || MEMBER_AVATAR_FALLBACKS[index % MEMBER_AVATAR_FALLBACKS.length];
+  const getFeedbackAvatar = (feedback: FeedbackItem, index: number) =>
+    feedback.avatar || FEEDBACK_AVATAR_FALLBACKS[index % FEEDBACK_AVATAR_FALLBACKS.length];
   const exportMockData = () => {
     const payload = {
       mockNodes: nodes,
@@ -926,7 +951,7 @@ function App() {
           <span className="brandText">{t.brand}</span>
           </button>
           <nav className="navGroup">
-            {NAV_ITEMS.filter((item) => item.key !== 'about').map((item) => (
+            {NAV_ITEMS.filter((item) => item.key !== 'about' && item.key !== 'feedback').map((item) => (
               <button
                 key={item.key}
                 className={`navBtn ${isNavActive(item.key) ? 'activeNav' : ''}`}
@@ -940,7 +965,7 @@ function App() {
         </div>
 
         <div className="navRight">
-          {NAV_ITEMS.filter((item) => item.key === 'about').map((item) => (
+          {NAV_ITEMS.filter((item) => item.key === 'about' || item.key === 'feedback').map((item) => (
             <button
               key={item.key}
               className={`navBtn ${isNavActive(item.key) ? 'activeNav' : ''}`}
@@ -987,20 +1012,34 @@ function App() {
       {routeView === 'landing' && (
         <main className="landingPage">
           <section className="landingShell">
-            <div className="landingHero">
-              <span className="landingKicker">{t.heroKicker}</span>
-              <h1>{t.heroTitle}</h1>
-              <p>{t.heroDesc}</p>
-              <div className="landingActions">
-                <button type="button" className="primaryBtn" onClick={() => navigate('/thao-tac-ban-do')}>
-                  {t.ctaMap}
-                </button>
-                <button type="button" className="ghostBtn" onClick={() => navigate('/ve-chung-toi')}>
-                  {t.ctaAbout}
-                </button>
+            <div className="landingTopRow">
+              <div className="landingHero">
+                <span className="landingKicker">{t.heroKicker}</span>
+                <h1>{t.heroTitle}</h1>
+                <p>{t.heroDesc}</p>
+                <div className="landingActions">
+                  <button type="button" className="primaryBtn" onClick={() => navigate('/thao-tac-ban-do')}>
+                    {t.ctaMap}
+                  </button>
+                  <button type="button" className="ghostBtn" onClick={() => navigate('/ve-chung-toi')}>
+                    {t.ctaAbout}
+                  </button>
+                </div>
               </div>
+              <section className="landingVideoSection">
+                <h3>{t.introVideo}</h3>
+                <div className="landingVideoWrap">
+                  <iframe
+                    src={INTRO_VIDEO_EMBED_URL}
+                    title="ULIS introduction video"
+                    loading="lazy"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    referrerPolicy="strict-origin-when-cross-origin"
+                    allowFullScreen
+                  />
+                </div>
+              </section>
             </div>
-
             <section className="landingFeatures">
               <article className="featureCard">
                 <h4>{t.f1t}</h4>
@@ -1064,10 +1103,15 @@ function App() {
               <section className="card">
                 <h3>{t.feedback}</h3>
                 <div className="feedbackList">
-                  {detailNode.feedbacks.map((item) => (
+                  {detailNode.feedbacks.map((item, index) => (
                     <article key={`${item.user}-${item.createdAt}`} className="feedbackItem">
-                      <strong>{item.user}</strong>
-                      <span>{item.rating}/5 • {item.createdAt}</span>
+                      <div className="feedbackHead">
+                        <img src={getFeedbackAvatar(item, index)} alt={item.user} className="feedbackAvatar" />
+                        <div>
+                          <strong>{item.user}</strong>
+                          <span>{item.rating}/5 • {item.createdAt}</span>
+                        </div>
+                      </div>
                       <p>{item.comment}</p>
                     </article>
                   ))}
@@ -1280,14 +1324,36 @@ function App() {
                 ))}
               </div>
             </section>
+          </div>
+        </main>
+      )}
 
+      {routeView === 'feedback' && (
+        <main className="feedbackPage">
+          <section className="feedbackHero card">
+            <h1>{t.feedbackFormTitle}</h1>
+            <p>{t.aboutDesc}</p>
+          </section>
+          <div className="feedbackLayout">
+            <aside className="feedbackInfo card">
+              <h3>{t.highlights}</h3>
+              <ul className="feedbackPoints">
+                <li>{t.f1d}</li>
+                <li>{t.f2d}</li>
+                <li>{t.f3d}</li>
+              </ul>
+              <div className="feedbackContact">
+                <span><strong>{t.footerPhone}:</strong> (+84)868.433.805</span>
+                <span><strong>{t.footerEmail}:</strong> thuylinh1612006@gmail.com</span>
+                <span><strong>{t.footerAddress}:</strong> {t.footerAddressValue}</span>
+              </div>
+            </aside>
             <section className="aboutFeedback card">
-              <h3>{t.feedbackFormTitle}</h3>
               <form onSubmit={submitFeedback} className="feedbackForm">
                 <input type="text" name="fullName" placeholder={t.fullName} required />
                 <input type="tel" name="phoneNumber" placeholder={t.phoneNumber} required />
                 <input type="email" name="email" placeholder={t.emailAddress} required />
-                <textarea name="feedback" placeholder={t.feedbackContent} rows={4} required />
+                <textarea name="feedback" placeholder={t.feedbackContent} rows={5} required />
                 <button type="submit" disabled={feedbackStatus === 'sending'}>
                   {feedbackStatus === 'sending' ? t.sendingFeedback : t.sendFeedback}
                 </button>
@@ -1418,10 +1484,11 @@ function App() {
                     </div>
                     <div className="adminTableWrap">
                       <table>
-                        <thead><tr><th>User</th><th>Rating</th><th>Comment</th><th>Date</th><th>{t.actions}</th></tr></thead>
+                        <thead><tr><th>Avatar</th><th>User</th><th>Rating</th><th>Comment</th><th>Date</th><th>{t.actions}</th></tr></thead>
                         <tbody>
                           {nodeEditor.feedbacks.map((item, index) => (
                             <tr key={`${item.user}-${index}`}>
+                              <td><input value={getFeedbackAvatar(item, index)} onChange={(event) => updateNodeEditorFeedback(index, { avatar: event.target.value })} /></td>
                               <td><input value={item.user} onChange={(event) => updateNodeEditorFeedback(index, { user: event.target.value })} /></td>
                               <td><input value={item.rating} onChange={(event) => updateNodeEditorFeedback(index, { rating: Number(event.target.value) || item.rating })} /></td>
                               <td><input value={item.comment} onChange={(event) => updateNodeEditorFeedback(index, { comment: event.target.value })} /></td>

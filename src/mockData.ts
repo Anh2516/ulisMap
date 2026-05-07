@@ -33,6 +33,7 @@ export type FeedbackItem = {
   rating: number;
   comment: string;
   createdAt: string;
+  avatar?: string;
 };
 
 export const mockNodes: CampusNode[] = [

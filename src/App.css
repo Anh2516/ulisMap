@@ -278,6 +278,13 @@
   overflow: hidden;
 }
 
+.landingTopRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(280px, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
 .landingHero {
   position: relative;
   overflow: hidden;
@@ -354,10 +361,35 @@
 }
 
 .landingFeatures {
-  margin-top: 28px;
+  margin-top: 20px;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
+}
+
+.landingVideoSection {
+  display: grid;
+  gap: 8px;
+  align-content: start;
+}
+
+.landingVideoSection h3 {
+  margin: 0;
+  color: #dbeafe;
+}
+
+.landingVideoWrap {
+  border: 1px solid #29457a;
+  border-radius: 14px;
+  overflow: hidden;
+  background: rgba(8, 15, 35, 0.7);
+}
+
+.landingVideoWrap iframe {
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  border: 0;
+  display: block;
 }
 
 .featureCard {
@@ -619,6 +651,20 @@
   border-radius: 12px;
   padding: 10px;
   background: var(--surface-2);
+}
+
+.feedbackHead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.feedbackAvatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 999px;
+  object-fit: cover;
+  border: 1px solid #cbd5e1;
 }
 
 .feedbackItem strong {
@@ -935,6 +981,69 @@ select:focus {
   gap: 14px;
 }
 
+.feedbackPage {
+  display: grid;
+  gap: 14px;
+}
+
+.feedbackPage h1 {
+  margin: 0;
+}
+
+.feedbackHero {
+  border-radius: 16px;
+  background: radial-gradient(circle at 12% 22%, rgba(52, 211, 153, 0.18), transparent 38%),
+    radial-gradient(circle at 90% 28%, rgba(59, 130, 246, 0.2), transparent 40%),
+    linear-gradient(120deg, #0a1d4f 0%, #113571 56%, #1e3a8a 100%);
+  color: #f8fbff;
+  border-color: #2f4f91;
+}
+
+.feedbackHero p {
+  margin: 8px 0 0;
+  color: #d7e4fb;
+  max-width: 760px;
+}
+
+.feedbackLayout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.feedbackInfo {
+  border-radius: 14px;
+  background: linear-gradient(145deg, #f4f9ff 0%, #eef6ff 55%, #eaf4ff 100%);
+}
+
+.feedbackInfo h3 {
+  margin: 0 0 10px;
+}
+
+.feedbackPoints {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 8px;
+  color: #334155;
+}
+
+.feedbackContact {
+  margin-top: 14px;
+  display: grid;
+  gap: 8px;
+}
+
+.feedbackContact span {
+  font-size: 0.9rem;
+  color: #334155;
+  border: 1px solid #c9dbf4;
+  border-radius: 10px;
+  padding: 9px 11px;
+  background: rgba(255, 255, 255, 0.75);
+}
+
 .aboutHero {
   display: flex;
   justify-content: space-between;
@@ -1020,6 +1129,12 @@ select:focus {
 .aboutFeedback {
   margin-top: 0;
   border-radius: 14px;
+}
+
+.feedbackPage .aboutFeedback {
+  max-width: 100%;
+  margin: 0;
+  width: 100%;
 }
 
 .feedbackForm {
@@ -1278,6 +1393,10 @@ select:focus {
   background: #0e1b33;
 }
 
+.app.dark .feedbackAvatar {
+  border-color: #3a5071;
+}
+
 /* Full dark-mode palette tuning */
 .app.dark .topNav {
   background: rgba(7, 14, 28, 0.92);
@@ -1532,6 +1651,28 @@ select:focus {
   border-color: #3a5173;
 }
 
+.app.dark .feedbackHero {
+  border-color: #3a5688;
+  background: radial-gradient(circle at 12% 22%, rgba(16, 185, 129, 0.22), transparent 38%),
+    radial-gradient(circle at 90% 28%, rgba(37, 99, 235, 0.28), transparent 40%),
+    linear-gradient(120deg, #08122d 0%, #112246 56%, #19346a 100%);
+}
+
+.app.dark .feedbackInfo {
+  background: linear-gradient(150deg, #0c1730 0%, #132443 55%, #162a4d 100%);
+  border-color: #355074;
+}
+
+.app.dark .feedbackPoints,
+.app.dark .feedbackContact span {
+  color: #cfe0ff;
+}
+
+.app.dark .feedbackContact span {
+  border-color: #345173;
+  background: rgba(11, 23, 43, 0.7);
+}
+
 .app.dark .memberAvatar {
   border-color: #3a5780;
 }
@@ -1688,6 +1829,10 @@ select:focus {
     min-height: 0;
   }
 
+  .landingTopRow {
+    grid-template-columns: 1fr;
+  }
+
   .landingHero h1 {
     font-size: 2.1rem;
   }
@@ -1708,7 +1853,8 @@ select:focus {
   }
 
   .aboutHero,
-  .aboutLayout {
+  .aboutLayout,
+  .feedbackLayout {
     grid-template-columns: 1fr;
     display: grid;
   }
