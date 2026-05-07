@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+ import React, { useCallback, useMemo, useState } from 'react';
 import { CircleMarker, MapContainer, Popup, TileLayer, Tooltip } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { mockEdges, mockMembers, mockNodes, type CampusNode, type TeamMember } from './mockData';
@@ -99,6 +99,13 @@ const TEXT = {
     all: 'Tất cả',
     locationDataFilter: 'Dữ liệu địa danh',
     membersDataFilter: 'Dữ liệu về chúng tôi',
+    footerSchool: 'Đại học Quốc gia Hà Nội - Trường Đại học Ngoại ngữ',
+    footerAddress: 'Địa chỉ',
+    footerAddressValue: 'Số 2 đường Phạm Văn Đồng, Phường Cầu Giấy, Hà Nội',
+    footerPhone: 'Tel',
+    footerFax: 'Fax',
+    footerEmail: 'Email',
+    footerCopy: '© Trường Đại học Ngoại ngữ - Đại học Quốc gia Hà Nội.',
     importError: 'File mockData không hợp lệ.',
     reset: 'Khôi phục mặc định',
     export: 'Xuất mockData JSON',
@@ -179,6 +186,13 @@ const TEXT = {
     all: 'All',
     locationDataFilter: 'Location data',
     membersDataFilter: 'About us data',
+    footerSchool: 'VNU University of Languages and International Studies',
+    footerAddress: 'Address',
+    footerAddressValue: 'No. 2 Pham Van Dong Street, Cau Giay Ward, Ha Noi',
+    footerPhone: 'Tel',
+    footerFax: 'Fax',
+    footerEmail: 'Email',
+    footerCopy: '© University of Languages and International Studies - VNU.',
     importError: 'Invalid mockData file.',
     reset: 'Reset default',
     export: 'Export mockData JSON',
@@ -920,6 +934,15 @@ function App() {
           )}
         </main>
       )}
+
+      <footer className="siteFooter card">
+        <h3>{t.footerSchool}</h3>
+        <p><strong>{t.footerAddress}:</strong> {t.footerAddressValue}</p>
+        <p><strong>{t.footerPhone}:</strong> <a href="tel:+842437547269">(+84)243.754.7269</a></p>
+        <p><strong>{t.footerFax}:</strong> (+84)243.754.8057</p>
+        <p><strong>{t.footerEmail}:</strong> <a href="mailto:dhnn@vnu.edu.vn">dhnn@vnu.edu.vn</a></p>
+        <div className="footerCopy">{t.footerCopy}</div>
+      </footer>
     </div>
   );
 }
