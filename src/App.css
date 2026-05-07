@@ -1,0 +1,1240 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&display=swap');
+
+:root {
+  --bg: #f2f5fb;
+  --surface: #ffffff;
+  --surface-2: #f8faff;
+  --text: #0f172a;
+  --muted: #64748b;
+  --line: #e2e8f0;
+  --primary: #2563eb;
+  --primary-strong: #1d4ed8;
+  --success: #16a34a;
+  --radius: 16px;
+  --shadow: 0 12px 35px rgba(15, 23, 42, 0.08);
+}
+
+.app {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 0% 0%, rgba(37, 99, 235, 0.08), transparent 30%),
+    radial-gradient(circle at 100% 100%, rgba(20, 184, 166, 0.08), transparent 35%),
+    var(--bg);
+  color: var(--text);
+  font-family: Inter, 'Segoe UI', sans-serif;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.app.dark {
+  --bg: #0b1220;
+  --surface: #111827;
+  --surface-2: #0f1a2f;
+  --text: #e5e7eb;
+  --muted: #94a3b8;
+  --line: #243244;
+  --primary: #3b82f6;
+  --primary-strong: #2563eb;
+  --shadow: 0 16px 34px rgba(2, 8, 23, 0.45);
+}
+
+.topNav {
+  position: sticky;
+  top: 12px;
+  z-index: 1000;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(226, 232, 240, 0.85);
+  border-radius: 14px;
+  padding: 10px 14px;
+  margin-bottom: 16px;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.05);
+  gap: 12px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.brandText {
+  font-family: 'Montserrat', 'Segoe UI', sans-serif;
+  font-weight: 800;
+  font-size: 1.75rem;
+  letter-spacing: 0.1px;
+  line-height: 1;
+  color: #0f172a;
+  text-shadow: none;
+}
+
+.brandButton {
+  border: none;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  color: inherit;
+}
+
+.brandLogo {
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  object-fit: cover;
+  border: 1px solid #dbe5f3;
+}
+
+.topNav nav {
+  display: contents;
+}
+
+.navLeft,
+.navRight,
+.navGroup {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.navLeft {
+  gap: 14px;
+}
+
+.navRight {
+  justify-content: flex-end;
+}
+
+.navBtn,
+.utilityBtn {
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: #334155;
+  border-radius: 999px;
+  padding: 8px 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.navBtn:hover,
+.utilityBtn:hover {
+  background: #eef4ff;
+  color: #1e3a8a;
+  border-color: #c7d9fb;
+}
+
+.navBtn.activeNav {
+  background: var(--primary);
+  color: #fff;
+  border-color: transparent;
+}
+
+.utilityBtn {
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 18px;
+  animation: fade-up 0.45s ease both;
+}
+
+.landingPage {
+  display: grid;
+  gap: 16px;
+}
+
+.landingShell {
+  background: radial-gradient(circle at 10% 20%, rgba(8, 190, 180, 0.26), transparent 34%),
+    radial-gradient(circle at 85% 28%, rgba(49, 73, 244, 0.24), transparent 38%),
+    linear-gradient(115deg, #05102a 0%, #07163b 58%, #0a1d54 100%);
+  border-radius: 20px;
+  padding: 42px 34px 28px;
+  border: 1px solid #1c2e5f;
+  overflow: hidden;
+}
+
+.landingHero {
+  position: relative;
+  overflow: hidden;
+  color: #f8fafc;
+  border-radius: 0;
+  padding: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  animation: fade-up 0.6s ease both;
+}
+
+.landingKicker {
+  display: inline-flex;
+  width: fit-content;
+  font-size: 0.76rem;
+  letter-spacing: 0.2px;
+  color: #8be3ee;
+  border: 1px solid rgba(92, 217, 228, 0.45);
+  border-radius: 999px;
+  padding: 6px 10px;
+  background: rgba(12, 143, 164, 0.16);
+  margin-bottom: 14px;
+}
+
+.landingHero h1 {
+  margin: 0 0 12px;
+  font-size: clamp(2.8rem, 5vw, 4.3rem);
+  line-height: 1.02;
+  max-width: 780px;
+  letter-spacing: -0.5px;
+}
+
+.landingHero p {
+  margin: 0;
+  max-width: 700px;
+  color: #a9bddb;
+  font-size: 1.05rem;
+  line-height: 1.6;
+}
+
+.landingActions {
+  margin-top: 24px;
+  display: flex;
+  gap: 10px;
+}
+
+.primaryBtn,
+.ghostBtn {
+  border-radius: 11px;
+  padding: 11px 15px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.primaryBtn {
+  border: none;
+  background: linear-gradient(90deg, #2de4da, #14b8a6);
+  color: #07323b;
+}
+
+.ghostBtn {
+  border: 1px solid rgba(203, 213, 225, 0.34);
+  background: rgba(15, 23, 42, 0.25);
+  color: #e2e8f0;
+}
+
+.primaryBtn:hover,
+.ghostBtn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.2);
+}
+
+.landingFeatures {
+  margin-top: 28px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.featureCard {
+  background: linear-gradient(180deg, rgba(13, 23, 46, 0.9) 0%, rgba(12, 20, 40, 0.95) 100%);
+  color: #d4deed;
+  border: 1px solid #263c67;
+  border-radius: 14px;
+  padding: 14px;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+  animation: fade-up 0.6s ease both;
+}
+
+.featureCard:hover {
+  transform: translateY(-2px);
+  border-color: #334155;
+}
+
+.featureCard h4 {
+  margin: 0 0 6px;
+  color: #63dfeb;
+}
+
+.featureCard p {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.landingCatalog h3 {
+  margin: 0 0 6px;
+  font-size: 1.2rem;
+}
+
+.landingCatalog p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.landingToolbar {
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: 1fr 210px;
+  gap: 10px;
+  padding: 10px;
+  border: 1px solid #d7e4f7;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #f8fbff 0%, #eef4ff 100%);
+}
+
+.landingToolbar input,
+.landingToolbar select {
+  min-height: 42px;
+  border-radius: 10px;
+  border-color: #bdd2f2;
+  background: #ffffff;
+  color: #0f172a;
+}
+
+.landingToolbar input::placeholder {
+  color: #6b7f9f;
+}
+
+.landingToolbar input:focus,
+.landingToolbar select:focus {
+  border-color: #60a5fa;
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.24);
+}
+
+.locationGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.locationCard {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  background: #fff;
+  animation: fade-up 0.45s ease both;
+}
+
+.locationCard:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 30px rgba(15, 23, 42, 0.12);
+}
+
+.locationCard img {
+  width: 100%;
+  height: 170px;
+  object-fit: cover;
+}
+
+.locationCard h3 {
+  margin: 10px 12px 4px;
+  font-size: 1rem;
+}
+
+.locationCard p {
+  margin: 0 12px 12px;
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+.detailPage h1 {
+  margin-top: 0;
+}
+
+.detailTitle {
+  margin-bottom: 4px;
+}
+
+.detailSubtitle {
+  margin: 0 0 12px;
+  color: var(--muted);
+}
+
+.detailImage {
+  width: 100%;
+  max-width: 100%;
+  border-radius: 12px;
+  margin: 10px 0;
+  min-height: 360px;
+  object-fit: cover;
+}
+
+.detailLayout {
+  display: grid;
+  grid-template-columns: 1.45fr 1fr;
+  gap: 14px;
+  align-items: start;
+}
+
+.detailMainColumn {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 10px;
+}
+
+.detailThumbRow {
+  display: flex;
+  gap: 8px;
+  margin: 0 0 10px;
+}
+
+.detailThumb {
+  width: 84px;
+  height: 58px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 2px solid transparent;
+}
+
+.detailThumb.active {
+  border-color: var(--primary);
+}
+
+.detailInfo {
+  display: grid;
+  gap: 12px;
+}
+
+.detailHeroCard h3 {
+  margin: 0;
+  font-size: 2rem;
+  color: #14b8a6;
+}
+
+.detailHeroCard p {
+  margin: 6px 0;
+}
+
+.detailBadgeRow {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #e9f2ff;
+  border: 1px solid #c8dcfb;
+  color: #1e40af;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.detailCoord {
+  color: var(--muted);
+  margin-top: 8px;
+}
+
+.detailMetaGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.detailMetaGrid h4 {
+  margin: 0 0 8px;
+}
+
+.detailMetaGrid p {
+  margin: 4px 0;
+}
+
+.feedbackList {
+  display: grid;
+  gap: 10px;
+}
+
+.detailMapCard {
+  display: grid;
+  gap: 10px;
+}
+
+.detailMapDesc {
+  margin: 0;
+  color: var(--muted);
+}
+
+.detailMapEmbedWrap {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.detailMapEmbedWrap iframe {
+  width: 100%;
+  height: 310px;
+  border: 0;
+  display: block;
+}
+
+.feedbackItem {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px;
+  background: var(--surface-2);
+}
+
+.feedbackItem strong {
+  display: block;
+}
+
+.feedbackItem span {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.feedbackItem p {
+  margin: 6px 0 0;
+}
+
+.linkBtn {
+  border: none;
+  background: transparent;
+  color: var(--primary);
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+}
+
+.content {
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  gap: 14px;
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.card h2 {
+  margin: 0 0 10px;
+}
+
+label {
+  display: block;
+  margin: 12px 0 6px;
+  font-weight: 600;
+  color: #334155;
+  font-size: 0.92rem;
+}
+
+input,
+select {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 11px;
+  border-radius: 10px;
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+input:focus,
+select:focus {
+  outline: none;
+  border-color: #93c5fd;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.14);
+}
+
+.panel input,
+.panel select {
+  padding: 8px 10px;
+  border-radius: 9px;
+  font-size: 0.96rem;
+}
+
+.panel input::placeholder {
+  font-size: 0.92rem;
+}
+
+.searchSuggestWrap {
+  position: relative;
+}
+
+.suggestList {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 25;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.12);
+  padding: 6px;
+  display: grid;
+  gap: 4px;
+}
+
+.suggestList span {
+  font-size: 0.78rem;
+  color: var(--muted);
+  padding: 2px 6px;
+}
+
+.suggestList button {
+  border: none;
+  background: transparent;
+  text-align: left;
+  padding: 7px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  color: var(--text);
+}
+
+.suggestList button:hover {
+  background: #edf4ff;
+}
+
+.hit {
+  margin-top: 8px;
+  color: var(--success);
+  font-weight: 600;
+}
+
+.routeBox ol {
+  padding-left: 18px;
+  margin: 8px 0;
+}
+
+.steps {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.steps span {
+  background: #eff6ff;
+  color: #1e40af;
+  border: 1px solid #bfdbfe;
+  border-radius: 999px;
+  padding: 4px 8px;
+  font-size: 0.8rem;
+}
+
+.mapHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.mapHeader p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+.mapCanvas {
+  position: relative;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+}
+
+.leafletMap {
+  width: 100%;
+  min-height: 560px;
+  height: calc(100vh - 220px);
+}
+
+.leaflet-tooltip.mapLabel {
+  background: rgba(15, 23, 42, 0.86);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 5px 8px;
+}
+
+.leaflet-tooltip-top.mapLabel::before {
+  border-top-color: rgba(15, 23, 42, 0.86);
+}
+
+.mapPopup h3 {
+  margin: 0 0 4px;
+}
+
+.mapPopup p {
+  margin: 0 0 8px;
+  color: var(--muted);
+  font-size: 0.84rem;
+}
+
+.mapPopup a {
+  display: inline-block;
+  text-decoration: none;
+  background: var(--primary);
+  color: #fff;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 0.84rem;
+}
+
+.mapInfoCard {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  z-index: 600;
+  background: rgba(15, 23, 42, 0.9);
+  color: #fff;
+  border-radius: 10px;
+  padding: 8px 10px;
+  animation: fade-up 0.35s ease both;
+}
+
+.mapInfoCard span {
+  color: #bfdbfe;
+  font-size: 0.8rem;
+}
+
+.aboutPage h1,
+.adminPage h1 {
+  margin-top: 0;
+}
+
+.aboutGrid {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.aboutGrid article {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px;
+  background: var(--surface-2);
+}
+
+.memberAvatar {
+  width: 62px;
+  height: 62px;
+  border-radius: 999px;
+  object-fit: cover;
+  border: 2px solid #d9e6fb;
+  margin-bottom: 8px;
+}
+
+.aboutGrid p {
+  color: var(--muted);
+}
+
+.adminHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.adminPage {
+  display: grid;
+  gap: 12px;
+}
+
+.adminActions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.adminHeader button,
+.importBtn {
+  border: none;
+  border-radius: 10px;
+  padding: 8px 12px;
+  cursor: pointer;
+  background: var(--primary);
+  color: #fff;
+}
+
+.importBtn {
+  background: #0f766e;
+}
+
+.importBtn input {
+  display: none;
+}
+
+.adminSection {
+  display: grid;
+  gap: 10px;
+  box-shadow: none;
+}
+
+.adminSectionHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.adminSectionHead h3 {
+  margin: 0;
+}
+
+.adminFilters {
+  display: grid;
+  gap: 8px;
+}
+
+.adminFilters h3 {
+  margin: 0;
+}
+
+.adminFilterRow {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.adminFilterRow span {
+  font-size: 0.88rem;
+  color: var(--muted);
+  margin-right: 4px;
+}
+
+.filterBtn {
+  border: 1px solid #bfdbfe;
+  background: #f8fbff;
+  color: #1e3a8a;
+  border-radius: 999px;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.filterBtn.active {
+  background: var(--primary);
+  color: #fff;
+  border-color: transparent;
+}
+
+.sectionAddBtn {
+  border: 1px solid #93c5fd;
+  border-radius: 10px;
+  background: #eff6ff;
+  color: #1e3a8a;
+  padding: 8px 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.neutralBtn {
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  color: #0f172a;
+  border-radius: 8px;
+  padding: 7px 10px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.adminTableWrap {
+  overflow-x: auto;
+  margin-bottom: 12px;
+}
+
+.adminTableWrap table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.adminTableWrap th,
+.adminTableWrap td {
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  padding: 8px;
+  vertical-align: top;
+}
+
+.adminActionCell {
+  display: flex;
+  gap: 6px;
+  min-width: 150px;
+}
+
+.adminEditor {
+  margin-top: 6px;
+}
+
+.adminEditor h4 {
+  margin: 0 0 8px;
+}
+
+.adminEditorGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.adminEditorActions {
+  margin-top: 10px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.adminModalBackdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(2, 8, 23, 0.5);
+  z-index: 2100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+}
+
+.adminModal {
+  width: min(820px, 100%);
+  max-height: calc(100vh - 36px);
+  overflow: auto;
+}
+
+.adminTableWrap input,
+.adminTableWrap select {
+  min-width: 120px;
+  font-size: 0.85rem;
+  padding: 8px 9px;
+}
+
+.dangerBtn {
+  border: none;
+  background: #dc2626;
+  color: #fff;
+  border-radius: 8px;
+  padding: 7px 10px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.dangerBtn:hover {
+  background: #b91c1c;
+}
+
+.adminMiniAvatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 999px;
+  object-fit: cover;
+  border: 1px solid #cdddf8;
+}
+
+.app.dark .feedbackItem {
+  border-color: #3a5071;
+  background: #0e1b33;
+}
+
+/* Full dark-mode palette tuning */
+.app.dark .topNav {
+  background: rgba(7, 14, 28, 0.92);
+  border-color: #2b3e5d;
+  box-shadow: 0 14px 34px rgba(2, 8, 23, 0.55);
+}
+
+.app.dark .brandButton {
+  color: #eef4ff;
+}
+
+.app.dark .brandLogo {
+  border-color: #3a5277;
+}
+
+.app.dark .brandText {
+  color: #f8fafc;
+  text-shadow: none;
+}
+
+.app.dark .navBtn,
+.app.dark .utilityBtn {
+  background: #101d33;
+  border-color: #324a6e;
+  color: #dbe8fb;
+}
+
+.app.dark .navBtn:hover,
+.app.dark .utilityBtn:hover {
+  background: #162a47;
+  border-color: #4b668e;
+  color: #eff6ff;
+}
+
+.app.dark .navBtn.activeNav {
+  background: #3b82f6;
+  color: #ffffff;
+}
+
+.app.dark .card {
+  background: linear-gradient(180deg, #0d172b 0%, #0a1426 100%);
+  border-color: #2c3f5f;
+}
+
+.app.dark .card h1,
+.app.dark .card h2,
+.app.dark .card h3,
+.app.dark .card h4,
+.app.dark .card strong {
+  color: #f1f6ff;
+}
+
+.app.dark .card p,
+.app.dark .mapHeader p,
+.app.dark .landingCatalog p,
+.app.dark .aboutGrid p {
+  color: #a7b9d3;
+}
+
+.app.dark .landingToolbar {
+  background: linear-gradient(180deg, rgba(8, 28, 60, 0.66) 0%, rgba(7, 20, 44, 0.52) 100%);
+  border-color: #34557f;
+}
+
+.app.dark label {
+  color: #c8d9f0;
+}
+
+.app.dark input,
+.app.dark select {
+  background: #0a1327;
+  color: #edf4ff;
+  border-color: #3a5173;
+}
+
+.app.dark input::placeholder {
+  color: #89a0bf;
+}
+
+.app.dark input:focus,
+.app.dark select:focus {
+  border-color: #60a5fa;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.24);
+}
+
+.app.dark .hit {
+  color: #6ee7b7;
+}
+
+.app.dark .steps span {
+  background: #122946;
+  border-color: #325780;
+  color: #bfd9ff;
+}
+
+.app.dark .suggestList {
+  background: #0c1a2f;
+  border-color: #355074;
+}
+
+.app.dark .suggestList button:hover {
+  background: #163153;
+}
+
+.app.dark .locationCard {
+  background: #0e1a2f;
+  border-color: #334d70;
+}
+
+.app.dark .locationCard h3 {
+  color: #edf4ff;
+}
+
+.app.dark .locationCard p {
+  color: #9eb3ce;
+}
+
+.app.dark .locationCard:hover {
+  box-shadow: 0 16px 32px rgba(2, 8, 23, 0.6);
+}
+
+.app.dark .mapCanvas {
+  border-color: #304864;
+}
+
+.app.dark .mapInfoCard {
+  background: rgba(6, 14, 28, 0.94);
+  border: 1px solid #304866;
+}
+
+.app.dark .mapInfoCard span {
+  color: #bcd5ff;
+}
+
+.app.dark .aboutGrid article {
+  background: #0d1a30;
+  border-color: #334d71;
+}
+
+.app.dark .memberAvatar {
+  border-color: #3a5780;
+}
+
+.app.dark .detailMainColumn {
+  background: #0d1a30;
+  border-color: #324a6f;
+}
+
+.app.dark .statusBadge {
+  background: #153057;
+  border-color: #325685;
+  color: #c7dcff;
+}
+
+.app.dark .detailMapEmbedWrap {
+  border-color: #355074;
+}
+
+.app.dark .adminTableWrap th,
+.app.dark .adminTableWrap td {
+  border-bottom-color: #2c3f5f;
+  color: #d6e6fc;
+}
+
+.app.dark .sectionAddBtn {
+  background: #122946;
+  border-color: #355a84;
+  color: #d4e6ff;
+}
+
+.app.dark .filterBtn {
+  background: #12243f;
+  border-color: #3f5f87;
+  color: #d0e4ff;
+}
+
+.app.dark .filterBtn.active {
+  background: #3b82f6;
+  color: #fff;
+}
+
+.app.dark .neutralBtn {
+  background: #0f1f36;
+  border-color: #3b567d;
+  color: #d8e8ff;
+}
+
+.app.dark .dangerBtn {
+  background: #b91c1c;
+}
+
+.app.dark .dangerBtn:hover {
+  background: #991b1b;
+}
+
+.app.dark .adminMiniAvatar {
+  border-color: #38567d;
+}
+
+.app.dark .adminHeader button,
+.app.dark .importBtn,
+.app.dark .mapPopup a {
+  background: #3b82f6;
+}
+
+.app.dark .adminHeader button:hover,
+.app.dark .importBtn:hover,
+.app.dark .mapPopup a:hover {
+  background: #2563eb;
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+@media (max-width: 980px) {
+  .app {
+    padding: 12px;
+  }
+
+  .topNav {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .navLeft,
+  .navRight {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .navRight {
+    justify-content: flex-start;
+  }
+
+  .landingHero {
+    padding: 0;
+    min-height: 0;
+  }
+
+  .landingHero h1 {
+    font-size: 2.1rem;
+  }
+
+  .brandText {
+    font-size: 1.35rem;
+  }
+
+  .landingShell {
+    padding: 24px 18px 18px;
+  }
+
+  .content,
+  .locationGrid,
+  .landingFeatures,
+  .aboutGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .landingToolbar {
+    grid-template-columns: 1fr;
+  }
+
+  .detailLayout,
+  .detailMetaGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .adminEditorGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .detailImage {
+    min-height: 240px;
+  }
+
+  .leafletMap {
+    min-height: 420px;
+    height: 60vh;
+  }
+}

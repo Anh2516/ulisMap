@@ -1,0 +1,20 @@
+{
+  "short_name": "Lạc lối ULIS",
+  "name": "Lạc lối ở ULIS",
+  "icons": [
+    {
+      "src": "favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "https://lh3.googleusercontent.com/u/0/d/1C6K22ihxiBsgVCghJ7BHQbSWKX7VEvY_=w2560-h1398-iv1?auditContext=prefetch",
+      "type": "image/png",
+      "sizes": "192x192"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#000000",
+  "background_color": "#ffffff"
+}
