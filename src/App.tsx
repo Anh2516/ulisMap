@@ -92,6 +92,12 @@ const TEXT = {
     openMaps: 'Mở trên Google Maps',
     aboutTitle: 'Về chúng tôi',
     aboutDesc: 'Nhóm dự án Lạc lối ở ULIS phát triển nền tảng bản đồ nội bộ cho sinh viên và giảng viên.',
+    feedbackFormTitle: 'Gửi phản hồi cho chúng tôi',
+    fullName: 'Họ và tên',
+    phoneNumber: 'Số điện thoại',
+    emailAddress: 'Email',
+    feedbackContent: 'Phản hồi',
+    sendFeedback: 'Gửi phản hồi',
     adminHint: 'Path ẩn: `/adminDashboard`. Sau khi sửa, bấm "Xuất mockData JSON" để lưu file dữ liệu.',
     adminMembers: 'Dữ liệu về chúng tôi',
     adminLocationData: 'Dữ liệu địa danh',
@@ -182,6 +188,12 @@ const TEXT = {
     openMaps: 'Open in Google Maps',
     aboutTitle: 'About us',
     aboutDesc: 'Lost at ULIS team builds an internal smart mapping platform for students and staff.',
+    feedbackFormTitle: 'Send us your feedback',
+    fullName: 'Full name',
+    phoneNumber: 'Phone number',
+    emailAddress: 'Email',
+    feedbackContent: 'Feedback',
+    sendFeedback: 'Send feedback',
     adminHint: 'Hidden path: `/adminDashboard`. Export JSON after editing to save your mock data.',
     adminMembers: 'About us data',
     adminLocationData: 'Location data',
@@ -272,6 +284,12 @@ const TEXT = {
     openMaps: '在 Google Maps 打开',
     aboutTitle: '关于我们',
     aboutDesc: 'Lost at ULIS 团队为师生打造校内智能地图平台。',
+    feedbackFormTitle: '向我们发送反馈',
+    fullName: '姓名',
+    phoneNumber: '电话号码',
+    emailAddress: '邮箱',
+    feedbackContent: '反馈内容',
+    sendFeedback: '发送反馈',
     adminHint: '隐藏路径: `/adminDashboard`。编辑后导出 JSON 保存数据。',
     adminMembers: '关于我们数据',
     adminLocationData: '地点数据',
@@ -362,6 +380,12 @@ const TEXT = {
     openMaps: 'Google Maps에서 열기',
     aboutTitle: '소개',
     aboutDesc: 'Lost at ULIS 팀은 교내 스마트 지도 플랫폼을 개발합니다.',
+    feedbackFormTitle: '피드백 보내기',
+    fullName: '성함',
+    phoneNumber: '전화번호',
+    emailAddress: '이메일',
+    feedbackContent: '피드백',
+    sendFeedback: '보내기',
     adminHint: '숨겨진 경로: `/adminDashboard`. 수정 후 JSON으로 저장하세요.',
     adminMembers: '소개 데이터',
     adminLocationData: '위치 데이터',
@@ -452,6 +476,12 @@ const TEXT = {
     openMaps: 'Google Maps で開く',
     aboutTitle: '私たちについて',
     aboutDesc: 'Lost at ULIS チームは学内スマートマップを開発しています。',
+    feedbackFormTitle: 'フィードバックを送信',
+    fullName: 'お名前',
+    phoneNumber: '電話番号',
+    emailAddress: 'メール',
+    feedbackContent: 'ご意見',
+    sendFeedback: '送信',
     adminHint: '隠しパス: `/adminDashboard`。編集後に JSON をエクスポートしてください。',
     adminMembers: 'メンバーデータ',
     adminLocationData: '地点データ',
@@ -625,9 +655,6 @@ function App() {
   const [landingQuery, setLandingQuery] = useState('');
   const [landingTypeFilter, setLandingTypeFilter] = useState<string>('all');
   const [isLangOpen, setIsLangOpen] = useState(false);
-  const [isLandingTypeOpen, setIsLandingTypeOpen] = useState(false);
-  const [isFromOpen, setIsFromOpen] = useState(false);
-  const [isToOpen, setIsToOpen] = useState(false);
   const [isMapLayerOpen, setIsMapLayerOpen] = useState(false);
   const [mapLayerMode, setMapLayerMode] = useState<'default' | 'satellite'>('default');
   const [from, setFrom] = useState('gate-main');
@@ -664,18 +691,6 @@ function App() {
   const t = TEXT[language];
   const currentLang = LANGUAGE_OPTIONS.find((item) => item.value === language) ?? LANGUAGE_OPTIONS[0];
   const uniqueNodeTypes = useMemo(() => Array.from(new Set(nodes.map((node) => node.type))).filter(Boolean), [nodes]);
-  const fromOptions = useMemo(
-    () => nodes.filter((node) => node.type === 'gate' || node.type === 'campus').map((node) => ({ value: node.id, label: node.label })),
-    [nodes]
-  );
-  const toOptions = useMemo(() => nodes.map((node) => ({ value: node.id, label: node.label })), [nodes]);
-  const landingTypeOptions = useMemo(
-    () => [{ value: 'all', label: t.allTypes }, ...uniqueNodeTypes.map((type) => ({ value: type, label: getTypeLabel(type, language) }))],
-    [t.allTypes, uniqueNodeTypes, language]
-  );
-  const selectedFromLabel = fromOptions.find((item) => item.value === from)?.label ?? from;
-  const selectedToLabel = toOptions.find((item) => item.value === selectedId)?.label ?? t.chooseDestination;
-  const selectedLandingTypeLabel = landingTypeOptions.find((item) => item.value === landingTypeFilter)?.label ?? t.allTypes;
   const landingNodes = useMemo(() => {
     const keyword = normalize(landingQuery);
     return nodes.filter((node) => {
@@ -921,28 +936,14 @@ function App() {
                 onChange={(event) => setLandingQuery(event.target.value)}
                 placeholder={t.landingSearchPlaceholder}
               />
-              <div className="customSelectWrap">
-                <button type="button" className="customSelectBtn" onClick={() => setIsLandingTypeOpen((prev) => !prev)}>
-                  {selectedLandingTypeLabel}
-                </button>
-                {isLandingTypeOpen && (
-                  <div className="customSelectMenu">
-                    {landingTypeOptions.map((item) => (
-                      <button
-                        key={item.value}
-                        type="button"
-                        className={`customSelectItem ${landingTypeFilter === item.value ? 'activeCustomSelectItem' : ''}`}
-                        onClick={() => {
-                          setLandingTypeFilter(item.value);
-                          setIsLandingTypeOpen(false);
-                        }}
-                      >
-                        {item.label}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
+              <select value={landingTypeFilter} onChange={(event) => setLandingTypeFilter(event.target.value)}>
+                <option value="all">{t.allTypes}</option>
+                {uniqueNodeTypes.map((type) => (
+                  <option key={type} value={type}>
+                    {getTypeLabel(type, language)}
+                  </option>
+                ))}
+              </select>
             </div>
           </section>
           <div className="locationGrid">
@@ -1034,7 +1035,7 @@ function App() {
       {routeView === 'map' && (
         <main className="content">
           <aside className="panel">
-            <section className="card">
+            <section className="card searchCard">
               <h2>{t.searchTitle}</h2>
               <label htmlFor="search">{t.searchLabel}</label>
               <div className="searchSuggestWrap">
@@ -1067,61 +1068,20 @@ function App() {
               </div>
               {destination && <p className="hit">{t.foundPrefix}: {destination.label}</p>}
               <label htmlFor="from">{t.fromLabel}</label>
-              <div id="from" className="customSelectWrap">
-                <button type="button" className="customSelectBtn" onClick={() => setIsFromOpen((prev) => !prev)}>
-                  {selectedFromLabel}
-                </button>
-                {isFromOpen && (
-                  <div className="customSelectMenu">
-                    {fromOptions.map((item) => (
-                      <button
-                        key={item.value}
-                        type="button"
-                        className={`customSelectItem ${from === item.value ? 'activeCustomSelectItem' : ''}`}
-                        onClick={() => {
-                          setFrom(item.value);
-                          setIsFromOpen(false);
-                        }}
-                      >
-                        {item.label}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
+              <select id="from" value={from} onChange={(event) => setFrom(event.target.value)}>
+                {nodes
+                  .filter((node) => node.type === 'gate' || node.type === 'campus')
+                  .map((node) => <option key={node.id} value={node.id}>{node.label}</option>)}
+              </select>
               <label htmlFor="to">{t.toLabel}</label>
-              <div id="to" className="customSelectWrap">
-                <button type="button" className="customSelectBtn" onClick={() => setIsToOpen((prev) => !prev)}>
-                  {selectedToLabel}
-                </button>
-                {isToOpen && (
-                  <div className="customSelectMenu">
-                    <button
-                      type="button"
-                      className={`customSelectItem ${selectedId === '' ? 'activeCustomSelectItem' : ''}`}
-                      onClick={() => {
-                        setSelectedId('');
-                        setIsToOpen(false);
-                      }}
-                    >
-                      {t.chooseDestination}
-                    </button>
-                    {toOptions.map((item) => (
-                      <button
-                        key={item.value}
-                        type="button"
-                        className={`customSelectItem ${selectedId === item.value ? 'activeCustomSelectItem' : ''}`}
-                        onClick={() => {
-                          setSelectedId(item.value);
-                          setIsToOpen(false);
-                        }}
-                      >
-                        {item.label}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
+              <select id="to" value={selectedId} onChange={(event) => setSelectedId(event.target.value)}>
+                <option value="">{t.chooseDestination}</option>
+                {nodes.map((node) => (
+                  <option key={node.id} value={node.id}>
+                    {node.label}
+                  </option>
+                ))}
+              </select>
             </section>
             <section className="routeBox card">
               <h2>{t.routeDetail}</h2>
@@ -1210,17 +1170,41 @@ function App() {
 
       {routeView === 'about' && (
         <main className="aboutPage card">
-          <h1>{t.aboutTitle}</h1>
-          <p>{t.aboutDesc}</p>
-          <div className="aboutGrid">
-            {members.map((member, index) => (
-              <article key={member.name}>
-                <img src={getMemberAvatar(member, index)} alt={member.name} className="memberAvatar" />
-                <h3>{member.name}</h3>
-                <p><strong>{member.role}</strong></p>
-                <p>{member.bio}</p>
-              </article>
-            ))}
+          <section className="aboutHero">
+            <div>
+              <h1>{t.aboutTitle}</h1>
+              <p>{t.aboutDesc}</p>
+            </div>
+            <div className="aboutBadgeCol">
+              <span className="aboutBadge">ULIS Smart Campus Map</span>
+              <span className="aboutBadge soft">Team Collaboration</span>
+            </div>
+          </section>
+
+          <div className="aboutLayout">
+            <section className="aboutTeamSection">
+              <div className="aboutGrid">
+                {members.map((member, index) => (
+                  <article key={member.name} className="aboutMemberCard">
+                    <img src={getMemberAvatar(member, index)} alt={member.name} className="memberAvatar" />
+                    <h3>{member.name}</h3>
+                    <p><strong>{member.role}</strong></p>
+                    <p>{member.bio}</p>
+                  </article>
+                ))}
+              </div>
+            </section>
+
+            <section className="aboutFeedback card">
+              <h3>{t.feedbackFormTitle}</h3>
+              <form action="https://formspree.io/f/xnjwbqbj" method="POST" className="feedbackForm">
+                <input type="text" name="fullName" placeholder={t.fullName} required />
+                <input type="tel" name="phoneNumber" placeholder={t.phoneNumber} required />
+                <input type="email" name="email" placeholder={t.emailAddress} required />
+                <textarea name="feedback" placeholder={t.feedbackContent} rows={4} required />
+                <button type="submit">{t.sendFeedback}</button>
+              </form>
+            </section>
           </div>
         </main>
       )}

@@ -405,13 +405,14 @@
 .landingToolbar {
   margin-top: 14px;
   display: grid;
-  grid-template-columns: 1fr 210px;
-  gap: 10px;
+  grid-template-columns: minmax(320px, 0.72fr) 190px;
+  gap: 6px;
   padding: 10px;
   border: 1px solid #d7e4f7;
   border-radius: 12px;
   background: linear-gradient(180deg, #f8fbff 0%, #eef4ff 100%);
   overflow: visible;
+  justify-content: start;
 }
 
 .landingToolbar input,
@@ -430,58 +431,6 @@
   padding-right: 10px;
 }
 
-.customSelectWrap {
-  position: relative;
-  z-index: 45;
-}
-
-.customSelectBtn {
-  width: 100%;
-  border: 1px solid #bdd2f2;
-  background: #ffffff;
-  color: #0f172a;
-  border-radius: 14px;
-  min-height: 42px;
-  text-align: left;
-  padding: 9px 12px;
-  cursor: pointer;
-}
-
-.customSelectMenu {
-  position: absolute;
-  top: calc(100% + 6px);
-  left: 0;
-  right: 0;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: 14px;
-  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.14);
-  padding: 6px;
-  display: grid;
-  gap: 4px;
-  z-index: 1300;
-  max-height: 250px;
-  overflow: auto;
-}
-
-.customSelectItem {
-  border: none;
-  background: transparent;
-  color: var(--text);
-  text-align: left;
-  border-radius: 10px;
-  padding: 8px 10px;
-  cursor: pointer;
-}
-
-.customSelectItem:hover {
-  background: #edf4ff;
-}
-
-.customSelectItem.activeCustomSelectItem {
-  background: #dbeafe;
-  color: #1d4ed8;
-}
 
 .landingToolbar input::placeholder {
   color: #6b7f9f;
@@ -706,6 +655,11 @@
   gap: 14px;
 }
 
+.searchCard {
+  position: relative;
+  z-index: 1;
+}
+
 .card h2 {
   margin: 0 0 10px;
 }
@@ -774,15 +728,12 @@ select:focus {
 }
 
 .searchSuggestWrap {
-  position: relative;
+  display: grid;
+  gap: 6px;
 }
 
 .suggestList {
-  position: absolute;
-  top: calc(100% + 4px);
-  left: 0;
-  right: 0;
-  z-index: 25;
+  position: static;
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 10px;
@@ -979,18 +930,78 @@ select:focus {
   margin-top: 0;
 }
 
+.aboutPage {
+  display: grid;
+  gap: 14px;
+}
+
+.aboutHero {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: flex-start;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.12) 0%, rgba(14, 165, 233, 0.08) 100%);
+}
+
+.aboutHero p {
+  margin: 6px 0 0;
+  color: var(--muted);
+  max-width: 680px;
+}
+
+.aboutBadgeCol {
+  display: grid;
+  gap: 8px;
+  justify-items: end;
+}
+
+.aboutBadge {
+  border: 1px solid #92c5ff;
+  border-radius: 999px;
+  padding: 6px 12px;
+  background: #e8f3ff;
+  color: #1e3a8a;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.aboutBadge.soft {
+  border-color: #b6d8ff;
+  background: #f4f9ff;
+}
+
+.aboutLayout {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  gap: 14px;
+  align-items: start;
+}
+
+.aboutTeamSection {
+  display: grid;
+  gap: 10px;
+}
+
 .aboutGrid {
-  margin-top: 12px;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
 }
 
-.aboutGrid article {
+.aboutMemberCard {
   border: 1px solid var(--line);
   border-radius: 12px;
-  padding: 12px;
+  padding: 14px;
   background: var(--surface-2);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.aboutMemberCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 22px rgba(15, 23, 42, 0.1);
 }
 
 .memberAvatar {
@@ -1004,6 +1015,41 @@ select:focus {
 
 .aboutGrid p {
   color: var(--muted);
+}
+
+.aboutFeedback {
+  margin-top: 0;
+  border-radius: 14px;
+}
+
+.feedbackForm {
+  display: grid;
+  gap: 8px;
+}
+
+.feedbackForm textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 11px;
+  border-radius: 10px;
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  color: #0f172a;
+  resize: vertical;
+}
+
+.feedbackForm button {
+  border: none;
+  border-radius: 10px;
+  padding: 9px 12px;
+  background: var(--primary);
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.feedbackForm button:hover {
+  background: var(--primary-strong);
 }
 
 .adminHeader {
@@ -1313,30 +1359,6 @@ select:focus {
   background-image: none;
 }
 
-.app.dark .customSelectBtn {
-  background: #0f1f36;
-  color: #e6efff;
-  border-color: #3f5f87;
-}
-
-.app.dark .customSelectMenu {
-  background: #0f1f36;
-  border-color: #355074;
-}
-
-.app.dark .customSelectItem {
-  color: #e6efff;
-}
-
-.app.dark .customSelectItem:hover {
-  background: #1a3153;
-}
-
-.app.dark .customSelectItem.activeCustomSelectItem {
-  background: #234a80;
-  color: #dbeafe;
-}
-
 .app.dark .mapLayerMenuBtn {
   background: #0f1f36;
   color: #e6efff;
@@ -1451,9 +1473,44 @@ select:focus {
   color: #bcd5ff;
 }
 
+.app.dark .mapPopup h3 {
+  color: #0f172a;
+  font-weight: 800;
+}
+
+.app.dark .mapPopup p {
+  color: #334155;
+}
+
 .app.dark .aboutGrid article {
   background: #0d1a30;
   border-color: #334d71;
+}
+
+.app.dark .aboutHero {
+  background: linear-gradient(135deg, rgba(40, 98, 180, 0.36) 0%, rgba(24, 70, 138, 0.3) 100%);
+  border-color: #37557d;
+}
+
+.app.dark .aboutBadge {
+  background: #15345f;
+  border-color: #3d6496;
+  color: #d5e7ff;
+}
+
+.app.dark .aboutBadge.soft {
+  background: #112d52;
+  border-color: #355b8d;
+}
+
+.app.dark .aboutMemberCard:hover {
+  box-shadow: 0 16px 28px rgba(2, 8, 23, 0.55);
+}
+
+.app.dark .feedbackForm textarea {
+  background: #0a1327;
+  color: #edf4ff;
+  border-color: #3a5173;
 }
 
 .app.dark .memberAvatar {
@@ -1631,6 +1688,16 @@ select:focus {
     grid-template-columns: 1fr;
   }
 
+  .aboutHero,
+  .aboutLayout {
+    grid-template-columns: 1fr;
+    display: grid;
+  }
+
+  .aboutBadgeCol {
+    justify-items: start;
+  }
+
   .landingToolbar {
     grid-template-columns: 1fr;
   }
@@ -1648,6 +1715,11 @@ select:focus {
   .siteFooter {
     margin-left: -12px;
     margin-right: -12px;
+  }
+
+  .aboutFeedback {
+    max-width: 100%;
+    margin-left: 0;
   }
 
   .detailLayout,
