@@ -16,6 +16,8 @@
 
 .app {
   min-height: 100vh;
+  display: flex;
+  flex-direction: column;
   background:
     radial-gradient(circle at 0% 0%, rgba(37, 99, 235, 0.08), transparent 30%),
     radial-gradient(circle at 100% 100%, rgba(20, 184, 166, 0.08), transparent 35%),
@@ -118,6 +120,8 @@
   padding: 8px 14px;
   cursor: pointer;
   transition: all 0.2s ease;
+  white-space: nowrap;
+  line-height: 1.1;
 }
 
 .navBtn:hover,
@@ -136,6 +140,118 @@
 .utilityBtn {
   background: var(--surface-2);
   color: var(--text);
+}
+
+.themeSwitch {
+  position: relative;
+  display: inline-flex;
+  width: 48px;
+  height: 28px;
+}
+
+.themeSwitch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.themeSlider {
+  position: absolute;
+  inset: 0;
+  cursor: pointer;
+  background: #cbd5e1;
+  border: 1px solid #b5c4d9;
+  border-radius: 999px;
+  transition: all 0.22s ease;
+}
+
+.themeSlider::before {
+  content: '';
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  left: 3px;
+  top: 3px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.2);
+  transition: transform 0.22s ease;
+}
+
+.themeSwitch input:checked + .themeSlider {
+  background: #2563eb;
+  border-color: #2563eb;
+}
+
+.themeSwitch input:checked + .themeSlider::before {
+  transform: translateX(20px);
+}
+
+.langMenuWrap {
+  position: relative;
+}
+
+.langMenuBtn {
+  width: 44px;
+  height: 36px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.langMenuBtn img {
+  width: 22px;
+  height: 16px;
+  border-radius: 2px;
+  object-fit: cover;
+}
+
+.langMenu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 146px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: 0 14px 32px rgba(15, 23, 42, 0.16);
+  padding: 6px;
+  display: grid;
+  gap: 4px;
+  z-index: 1100;
+}
+
+.langMenuItem {
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  color: var(--text);
+}
+
+.langMenuItem img {
+  width: 20px;
+  height: 14px;
+  border-radius: 2px;
+  object-fit: cover;
+}
+
+.langMenuItem span {
+  font-size: 0.9rem;
+}
+
+.langMenuItem:hover {
+  background: #edf4ff;
+}
+
+.langMenuItem.activeLangItem {
+  background: #dbeafe;
+  color: #1d4ed8;
 }
 
 .card {
@@ -298,6 +414,13 @@
   border-color: #bdd2f2;
   background: #ffffff;
   color: #0f172a;
+}
+
+.landingToolbar select {
+  appearance: auto;
+  -webkit-appearance: menulist;
+  background-image: none;
+  padding-right: 10px;
 }
 
 .landingToolbar input::placeholder {
@@ -544,6 +667,25 @@ select {
   border: 1px solid #cbd5e1;
   background: #fff;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+select {
+  appearance: none;
+  background-image:
+    linear-gradient(45deg, transparent 50%, #64748b 50%),
+    linear-gradient(135deg, #64748b 50%, transparent 50%);
+  background-position:
+    calc(100% - 16px) calc(50% - 2px),
+    calc(100% - 10px) calc(50% - 2px);
+  background-size: 6px 6px, 6px 6px;
+  background-repeat: no-repeat;
+  padding-right: 34px;
+}
+
+option {
+  background: #ffffff;
+  color: #0f172a;
+  padding: 8px;
 }
 
 input:focus,
@@ -984,6 +1126,29 @@ select:focus {
   color: #ffffff;
 }
 
+.app.dark .themeSlider {
+  background: #183355;
+  border-color: #32557f;
+}
+
+.app.dark .langMenu {
+  background: #0f1f36;
+  border-color: #37557f;
+}
+
+.app.dark .langMenuItem {
+  color: #e3efff;
+}
+
+.app.dark .langMenuItem:hover {
+  background: #1a3153;
+}
+
+.app.dark .langMenuItem.activeLangItem {
+  background: #234a80;
+  color: #dbeafe;
+}
+
 .app.dark .card {
   background: linear-gradient(180deg, #0d172b 0%, #0a1426 100%);
   border-color: #2c3f5f;
@@ -1009,6 +1174,12 @@ select:focus {
   border-color: #34557f;
 }
 
+.app.dark .landingToolbar select {
+  appearance: auto;
+  -webkit-appearance: menulist;
+  background-image: none;
+}
+
 .app.dark label {
   color: #c8d9f0;
 }
@@ -1018,6 +1189,17 @@ select:focus {
   background: #0a1327;
   color: #edf4ff;
   border-color: #3a5173;
+}
+
+.app.dark select {
+  background-image:
+    linear-gradient(45deg, transparent 50%, #9fb6d8 50%),
+    linear-gradient(135deg, #9fb6d8 50%, transparent 50%);
+}
+
+.app.dark option {
+  background: #0f1f36;
+  color: #edf4ff;
 }
 
 .app.dark input::placeholder {
@@ -1157,7 +1339,8 @@ select:focus {
 }
 
 .siteFooter {
-  margin-top: 14px;
+  margin-top: auto;
+  padding-top: 14px;
   margin-left: -20px;
   margin-right: -20px;
   background: linear-gradient(140deg, #0f4d87 0%, #0f538f 60%, #125f9f 100%);

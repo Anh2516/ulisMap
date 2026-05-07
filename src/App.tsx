@@ -5,12 +5,15 @@ import { mockEdges, mockMembers, mockNodes, type CampusNode, type TeamMember } f
 import './App.css';
 type RouteView = 'landing' | 'map' | 'about' | 'admin' | 'detail';
 type RouteState = { view: RouteView; detailId: string };
-type Language = 'vi' | 'en';
+type Language = 'vi' | 'en' | 'zh' | 'ko' | 'ja';
 type ThemeMode = 'light' | 'dark';
 
 const TYPE_LABELS: Record<Language, Record<string, string>> = {
   vi: { campus: 'Trường', gate: 'Cổng', hall: 'Hội trường', room: 'Phòng học', hub: 'Nút giao' },
-  en: { campus: 'Campus', gate: 'Gate', hall: 'Hall', room: 'Room', hub: 'Hub' }
+  en: { campus: 'Campus', gate: 'Gate', hall: 'Hall', room: 'Room', hub: 'Hub' },
+  zh: { campus: '学校', gate: '校门', hall: '礼堂', room: '教室', hub: '节点' },
+  ko: { campus: '캠퍼스', gate: '정문', hall: '강당', room: '강의실', hub: '허브' },
+  ja: { campus: 'キャンパス', gate: '門', hall: 'ホール', room: '教室', hub: 'ハブ' }
 };
 const STORAGE_KEY = 'vnu-map-nodes-v1';
 const NAV_ITEMS: Array<{ key: 'landing' | 'map' | 'about'; path: string }> = [
@@ -24,6 +27,13 @@ const MEMBER_AVATAR_FALLBACKS = [
   'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=300&q=80',
   'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=300&q=80',
   'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=300&q=80'
+];
+const LANGUAGE_OPTIONS: Array<{ value: Language; label: string; icon: string }> = [
+  { value: 'vi', label: 'Tiếng Việt', icon: 'https://flagcdn.com/w40/vn.png' },
+  { value: 'en', label: 'English', icon: 'https://flagcdn.com/w40/gb.png' },
+  { value: 'zh', label: '中文', icon: 'https://flagcdn.com/w40/cn.png' },
+  { value: 'ko', label: '한국어', icon: 'https://flagcdn.com/w40/kr.png' },
+  { value: 'ja', label: '日本語', icon: 'https://flagcdn.com/w40/jp.png' }
 ];
 const TEXT = {
   vi: {
@@ -199,6 +209,267 @@ const TEXT = {
     import: 'Import mockData JSON',
     lang: 'VI',
     theme: 'Dark'
+  },
+  zh: {
+    brand: '迷路在 ULIS',
+    nav: { landing: '首页', map: '地图操作', about: '关于我们' },
+    heroKicker: '智能地图 - 每周更新',
+    heroTitle: '快速清晰地找到 ULIS 路线',
+    heroDesc:
+      '连接你与教室、礼堂和校园关键地点，提供清晰信息与快速导航。',
+    ctaMap: '打开地图操作',
+    ctaAbout: '了解项目',
+    f1t: '可靠',
+    f1d: '地点数据集中管理，更新方便。',
+    f2t: '安心',
+    f2d: '出发前先查看清晰地点信息。',
+    f3t: '陪伴',
+    f3d: '一次点击即可查看详情并打开 Google Maps。',
+    catalogTitle: '热门地点目录',
+    catalogDesc: '选择卡片查看每个地点的详细信息。',
+    landingSearchPlaceholder: '在首页搜索地点...',
+    filterType: '按地点类型筛选',
+    allTypes: '全部类型',
+    backHome: '← 返回首页',
+    typePrefix: '类型',
+    detailTitle: '地点信息',
+    detailDescription: '详细描述',
+    openClose: '开放时间',
+    openAt: '开放',
+    closeAt: '关闭',
+    rating: '评分',
+    highlights: '快速信息',
+    convenient: '便利程度',
+    internalRoute: '校内路线',
+    mapPositionTitle: '地图位置',
+    mapPositionDesc: '地图标记',
+    openAddressMaps: '在 Google Maps 打开地址',
+    feedback: '社区反馈',
+    coordsPrefix: '坐标',
+    openLocation: '在 Google Maps 打开位置',
+    searchTitle: '搜索与导航',
+    searchLabel: '搜索教室 / 礼堂',
+    searchPlaceholder: '例如: A2-301, G2 礼堂, 203 教室...',
+    foundPrefix: '已找到',
+    fromLabel: '当前位置',
+    toLabel: '目的地',
+    routeDetail: '路线详情',
+    toPrefix: '前往',
+    chooseDestination: '请选择目的地开始导航。',
+    suggestionTitle: '关键词建议',
+    noRoute: '未找到合适路线。',
+    mapTitle: '校园地图',
+    mapSub: '标准底图 + 地点弹窗。',
+    openMaps: '在 Google Maps 打开',
+    aboutTitle: '关于我们',
+    aboutDesc: 'Lost at ULIS 团队为师生打造校内智能地图平台。',
+    adminHint: '隐藏路径: `/adminDashboard`。编辑后导出 JSON 保存数据。',
+    adminMembers: '关于我们数据',
+    adminLocationData: '地点数据',
+    adminTitle: '管理面板',
+    addLocation: '+ 新增地点',
+    addMember: '+ 新增成员',
+    actions: '操作',
+    edit: '编辑',
+    update: '更新',
+    cancel: '取消',
+    locationEditor: '地点编辑',
+    memberEditor: '成员编辑',
+    delete: '删除',
+    image: '图片',
+    latitude: '纬度',
+    longitude: '经度',
+    filterData: '数据筛选',
+    all: '全部',
+    locationDataFilter: '地点数据',
+    membersDataFilter: '关于我们数据',
+    footerSchool: '河内国家大学 - 外国语大学',
+    footerAddress: '地址',
+    footerAddressValue: '河内市纸桥郡范文同路 2 号',
+    footerPhone: '电话',
+    footerFax: '传真',
+    footerEmail: '邮箱',
+    footerCopy: '© 外国语大学 - 河内国家大学。',
+    importError: 'mockData 文件无效。',
+    reset: '恢复默认',
+    export: '导出 mockData JSON',
+    import: '导入 mockData JSON',
+    lang: 'ZH',
+    theme: '深色'
+  },
+  ko: {
+    brand: 'ULIS 길찾기',
+    nav: { landing: '홈', map: '지도 조작', about: '소개' },
+    heroKicker: '스마트 지도 - 주간 업데이트',
+    heroTitle: 'ULIS 길찾기를 빠르고 명확하게',
+    heroDesc:
+      '강의실, 강당, 주요 지점을 빠르게 연결하고 명확한 정보로 안내합니다.',
+    ctaMap: '지도 조작 열기',
+    ctaAbout: '프로젝트 보기',
+    f1t: '신뢰',
+    f1d: '목적지 데이터는 중앙에서 쉽게 관리됩니다.',
+    f2t: '안심',
+    f2d: '이동 전에 위치 정보를 명확히 확인할 수 있습니다.',
+    f3t: '동행',
+    f3d: '한 번의 클릭으로 상세 정보와 Google Maps 연결.',
+    catalogTitle: '주요 위치 목록',
+    catalogDesc: '카드를 선택해 각 위치의 상세 정보를 확인하세요.',
+    landingSearchPlaceholder: '홈에서 위치 검색...',
+    filterType: '유형 필터',
+    allTypes: '전체 유형',
+    backHome: '← 홈으로',
+    typePrefix: '유형',
+    detailTitle: '위치 정보',
+    detailDescription: '상세 설명',
+    openClose: '운영 시간',
+    openAt: '열림',
+    closeAt: '닫힘',
+    rating: '평점',
+    highlights: '빠른 정보',
+    convenient: '편의성',
+    internalRoute: '내부 경로',
+    mapPositionTitle: '지도 위치',
+    mapPositionDesc: '지도 핀',
+    openAddressMaps: 'Google Maps에서 주소 열기',
+    feedback: '커뮤니티 후기',
+    coordsPrefix: '좌표',
+    openLocation: 'Google Maps에서 위치 열기',
+    searchTitle: '검색 및 길찾기',
+    searchLabel: '강의실 / 강당 검색',
+    searchPlaceholder: '예: A2-301, G2 강당, 203호...',
+    foundPrefix: '검색 결과',
+    fromLabel: '현재 위치',
+    toLabel: '목적지',
+    routeDetail: '경로 상세',
+    toPrefix: '도착',
+    chooseDestination: '길찾기를 시작하려면 목적지를 선택하세요.',
+    suggestionTitle: '추천 검색어',
+    noRoute: '적절한 경로를 찾을 수 없습니다.',
+    mapTitle: '캠퍼스 지도',
+    mapSub: '기본 지도 + 위치 팝업.',
+    openMaps: 'Google Maps에서 열기',
+    aboutTitle: '소개',
+    aboutDesc: 'Lost at ULIS 팀은 교내 스마트 지도 플랫폼을 개발합니다.',
+    adminHint: '숨겨진 경로: `/adminDashboard`. 수정 후 JSON으로 저장하세요.',
+    adminMembers: '소개 데이터',
+    adminLocationData: '위치 데이터',
+    adminTitle: '관리 대시보드',
+    addLocation: '+ 위치 추가',
+    addMember: '+ 팀원 추가',
+    actions: '작업',
+    edit: '수정',
+    update: '업데이트',
+    cancel: '취소',
+    locationEditor: '위치 편집기',
+    memberEditor: '팀원 편집기',
+    delete: '삭제',
+    image: '이미지',
+    latitude: '위도',
+    longitude: '경도',
+    filterData: '데이터 필터',
+    all: '전체',
+    locationDataFilter: '위치 데이터',
+    membersDataFilter: '소개 데이터',
+    footerSchool: '하노이국립대학교 - 외국어대학교',
+    footerAddress: '주소',
+    footerAddressValue: '하노이 Cau Giay, Pham Van Dong 2번지',
+    footerPhone: '전화',
+    footerFax: '팩스',
+    footerEmail: '이메일',
+    footerCopy: '© 외국어대학교 - 하노이국립대학교.',
+    importError: '유효하지 않은 mockData 파일입니다.',
+    reset: '기본값 복원',
+    export: 'mockData JSON 내보내기',
+    import: 'mockData JSON 가져오기',
+    lang: 'KO',
+    theme: '다크'
+  },
+  ja: {
+    brand: 'ULIS 迷子ナビ',
+    nav: { landing: 'ホーム', map: '地図操作', about: '私たちについて' },
+    heroKicker: 'スマートマップ - 毎週更新',
+    heroTitle: 'ULIS での道案内を素早く明確に',
+    heroDesc:
+      '教室・ホール・重要地点をつなぎ、分かりやすい情報で素早く案内します。',
+    ctaMap: '地図操作を開く',
+    ctaAbout: 'プロジェクトを見る',
+    f1t: '信頼性',
+    f1d: '目的地データを一元管理し、更新しやすい。',
+    f2t: '安心',
+    f2d: '移動前に位置情報を明確に確認できます。',
+    f3t: '伴走',
+    f3d: 'ワンタップで詳細表示と Google Maps 連携。',
+    catalogTitle: '注目スポット',
+    catalogDesc: 'カードを選択して各地点の詳細を表示します。',
+    landingSearchPlaceholder: 'ホームで地点検索...',
+    filterType: '種類でフィルター',
+    allTypes: 'すべての種類',
+    backHome: '← ホームへ戻る',
+    typePrefix: '種類',
+    detailTitle: '地点情報',
+    detailDescription: '詳細説明',
+    openClose: '営業時間',
+    openAt: '開始',
+    closeAt: '終了',
+    rating: '評価',
+    highlights: 'クイック情報',
+    convenient: '利便性',
+    internalRoute: '学内ルート',
+    mapPositionTitle: '地図上の位置',
+    mapPositionDesc: 'ピン留め',
+    openAddressMaps: 'Google Maps で住所を開く',
+    feedback: 'コミュニティの声',
+    coordsPrefix: '座標',
+    openLocation: 'Google Maps で位置を開く',
+    searchTitle: '検索とナビ',
+    searchLabel: '教室 / ホールを検索',
+    searchPlaceholder: '例: A2-301, G2 ホール, 203 教室...',
+    foundPrefix: '見つかりました',
+    fromLabel: '現在地',
+    toLabel: '目的地',
+    routeDetail: 'ルート詳細',
+    toPrefix: '到着先',
+    chooseDestination: '案内を始めるには目的地を選択してください。',
+    suggestionTitle: '候補',
+    noRoute: '適切なルートが見つかりません。',
+    mapTitle: 'キャンパスマップ',
+    mapSub: '標準地図 + ポップアップ情報。',
+    openMaps: 'Google Maps で開く',
+    aboutTitle: '私たちについて',
+    aboutDesc: 'Lost at ULIS チームは学内スマートマップを開発しています。',
+    adminHint: '隠しパス: `/adminDashboard`。編集後に JSON をエクスポートしてください。',
+    adminMembers: 'メンバーデータ',
+    adminLocationData: '地点データ',
+    adminTitle: '管理ダッシュボード',
+    addLocation: '+ 地点を追加',
+    addMember: '+ メンバー追加',
+    actions: '操作',
+    edit: '編集',
+    update: '更新',
+    cancel: 'キャンセル',
+    locationEditor: '地点エディタ',
+    memberEditor: 'メンバーエディタ',
+    delete: '削除',
+    image: '画像',
+    latitude: '緯度',
+    longitude: '経度',
+    filterData: 'データフィルター',
+    all: 'すべて',
+    locationDataFilter: '地点データ',
+    membersDataFilter: 'メンバーデータ',
+    footerSchool: 'ハノイ国家大学 - 外国語大学',
+    footerAddress: '住所',
+    footerAddressValue: 'ハノイ市カウザイ区ファムヴァンドン通り2番',
+    footerPhone: '電話',
+    footerFax: 'Fax',
+    footerEmail: 'メール',
+    footerCopy: '© 外国語大学 - ハノイ国家大学。',
+    importError: 'mockData ファイルが無効です。',
+    reset: '初期化',
+    export: 'mockData JSON を出力',
+    import: 'mockData JSON を読込',
+    lang: 'JA',
+    theme: 'ダーク'
   }
 } as const;
 
@@ -338,6 +609,7 @@ function App() {
   const [mapQuery, setMapQuery] = useState('');
   const [landingQuery, setLandingQuery] = useState('');
   const [landingTypeFilter, setLandingTypeFilter] = useState<string>('all');
+  const [isLangOpen, setIsLangOpen] = useState(false);
   const [from, setFrom] = useState('gate-main');
   const [selectedId, setSelectedId] = useState<string>('');
   const nodeById = useMemo(() => new Map(nodes.map((node) => [node.id, node])), [nodes]);
@@ -370,6 +642,7 @@ function App() {
   const detailNode = nodeById.get(routeState.detailId);
   const routeView = routeState.view;
   const t = TEXT[language];
+  const currentLang = LANGUAGE_OPTIONS.find((item) => item.value === language) ?? LANGUAGE_OPTIONS[0];
   const uniqueNodeTypes = useMemo(() => Array.from(new Set(nodes.map((node) => node.type))).filter(Boolean), [nodes]);
   const landingNodes = useMemo(() => {
     const keyword = normalize(landingQuery);
@@ -540,12 +813,37 @@ function App() {
               {t.nav[item.key]}
             </button>
           ))}
-          <button type="button" className="utilityBtn" onClick={() => setLanguage((prev) => (prev === 'vi' ? 'en' : 'vi'))}>
-            {t.lang}
-          </button>
-          <button type="button" className="utilityBtn" onClick={() => setThemeMode((prev) => (prev === 'light' ? 'dark' : 'light'))}>
-            {t.theme}
-          </button>
+          <label className="themeSwitch" title={t.theme}>
+            <input
+              type="checkbox"
+              checked={themeMode === 'dark'}
+              onChange={() => setThemeMode((prev) => (prev === 'light' ? 'dark' : 'light'))}
+            />
+            <span className="themeSlider" />
+          </label>
+          <div className="langMenuWrap">
+            <button type="button" className="utilityBtn langMenuBtn" onClick={() => setIsLangOpen((prev) => !prev)}>
+              <img src={currentLang.icon} alt={currentLang.label} />
+            </button>
+            {isLangOpen && (
+              <div className="langMenu">
+                {LANGUAGE_OPTIONS.map((item) => (
+                  <button
+                    key={item.value}
+                    type="button"
+                    className={`langMenuItem ${language === item.value ? 'activeLangItem' : ''}`}
+                    onClick={() => {
+                      setLanguage(item.value);
+                      setIsLangOpen(false);
+                    }}
+                  >
+                    <img src={item.icon} alt={item.label} />
+                    <span>{item.label}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </header>
 
