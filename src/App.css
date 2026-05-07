@@ -1052,6 +1052,25 @@ select:focus {
   background: var(--primary-strong);
 }
 
+.feedbackForm button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.formNotice {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.formNotice.success {
+  color: #16a34a;
+}
+
+.formNotice.error {
+  color: #dc2626;
+}
+
 .adminHeader {
   display: flex;
   justify-content: space-between;

@@ -98,9 +98,16 @@ const TEXT = {
     emailAddress: 'Email',
     feedbackContent: 'Phản hồi',
     sendFeedback: 'Gửi phản hồi',
+    sendingFeedback: 'Đang gửi...',
+    feedbackSuccess: 'Đã gửi phản hồi thành công.',
+    feedbackError: 'Gửi phản hồi thất bại. Vui lòng thử lại.',
     adminHint: 'Path ẩn: `/adminDashboard`. Sau khi sửa, bấm "Xuất mockData JSON" để lưu file dữ liệu.',
     adminMembers: 'Dữ liệu về chúng tôi',
     adminLocationData: 'Dữ liệu địa danh',
+    adminDetailManager: 'Quản lý chi tiết địa điểm',
+    selectLocationDetail: 'Chọn địa điểm',
+    feedbackManager: 'Quản lý phản hồi',
+    addFeedback: '+ Thêm phản hồi',
     adminTitle: 'Admin Dashboard',
     addLocation: '+ Thêm địa danh',
     addMember: '+ Thêm thành viên',
@@ -194,9 +201,16 @@ const TEXT = {
     emailAddress: 'Email',
     feedbackContent: 'Feedback',
     sendFeedback: 'Send feedback',
+    sendingFeedback: 'Sending...',
+    feedbackSuccess: 'Feedback sent successfully.',
+    feedbackError: 'Failed to send feedback. Please try again.',
     adminHint: 'Hidden path: `/adminDashboard`. Export JSON after editing to save your mock data.',
     adminMembers: 'About us data',
     adminLocationData: 'Location data',
+    adminDetailManager: 'Location detail manager',
+    selectLocationDetail: 'Select location',
+    feedbackManager: 'Feedback manager',
+    addFeedback: '+ Add feedback',
     adminTitle: 'Admin Dashboard',
     addLocation: '+ Add location',
     addMember: '+ Add member',
@@ -290,9 +304,16 @@ const TEXT = {
     emailAddress: '邮箱',
     feedbackContent: '反馈内容',
     sendFeedback: '发送反馈',
+    sendingFeedback: '发送中...',
+    feedbackSuccess: '反馈已成功发送。',
+    feedbackError: '发送失败，请重试。',
     adminHint: '隐藏路径: `/adminDashboard`。编辑后导出 JSON 保存数据。',
     adminMembers: '关于我们数据',
     adminLocationData: '地点数据',
+    adminDetailManager: '地点详情管理',
+    selectLocationDetail: '选择地点',
+    feedbackManager: '反馈管理',
+    addFeedback: '+ 添加反馈',
     adminTitle: '管理面板',
     addLocation: '+ 新增地点',
     addMember: '+ 新增成员',
@@ -386,9 +407,16 @@ const TEXT = {
     emailAddress: '이메일',
     feedbackContent: '피드백',
     sendFeedback: '보내기',
+    sendingFeedback: '전송 중...',
+    feedbackSuccess: '피드백이 성공적으로 전송되었습니다.',
+    feedbackError: '전송에 실패했습니다. 다시 시도해주세요.',
     adminHint: '숨겨진 경로: `/adminDashboard`. 수정 후 JSON으로 저장하세요.',
     adminMembers: '소개 데이터',
     adminLocationData: '위치 데이터',
+    adminDetailManager: '위치 상세 관리',
+    selectLocationDetail: '위치 선택',
+    feedbackManager: '피드백 관리',
+    addFeedback: '+ 피드백 추가',
     adminTitle: '관리 대시보드',
     addLocation: '+ 위치 추가',
     addMember: '+ 팀원 추가',
@@ -482,9 +510,16 @@ const TEXT = {
     emailAddress: 'メール',
     feedbackContent: 'ご意見',
     sendFeedback: '送信',
+    sendingFeedback: '送信中...',
+    feedbackSuccess: '送信に成功しました。',
+    feedbackError: '送信に失敗しました。もう一度お試しください。',
     adminHint: '隠しパス: `/adminDashboard`。編集後に JSON をエクスポートしてください。',
     adminMembers: 'メンバーデータ',
     adminLocationData: '地点データ',
+    adminDetailManager: '地点詳細管理',
+    selectLocationDetail: '地点を選択',
+    feedbackManager: 'フィードバック管理',
+    addFeedback: '+ フィードバック追加',
     adminTitle: '管理ダッシュボード',
     addLocation: '+ 地点を追加',
     addMember: '+ メンバー追加',
@@ -657,6 +692,7 @@ function App() {
   const [isLangOpen, setIsLangOpen] = useState(false);
   const [isMapLayerOpen, setIsMapLayerOpen] = useState(false);
   const [mapLayerMode, setMapLayerMode] = useState<'default' | 'satellite'>('default');
+  const [feedbackStatus, setFeedbackStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
   const [from, setFrom] = useState('gate-main');
   const [selectedId, setSelectedId] = useState<string>('');
   const nodeById = useMemo(() => new Map(nodes.map((node) => [node.id, node])), [nodes]);
@@ -702,7 +738,6 @@ function App() {
       return matchKeyword && matchType;
     });
   }, [landingQuery, landingTypeFilter, nodes]);
-
   React.useEffect(() => localStorage.setItem(STORAGE_KEY, JSON.stringify(nodes)), [nodes]);
   React.useEffect(() => {
     const onPopState = () => setRouteState(resolveRouteState(window.location.pathname));
@@ -770,6 +805,41 @@ function App() {
     setNodeEditor(null);
     setNodeEditorOriginalId(null);
   };
+  const addNodeEditorFeedback = () => {
+    setNodeEditor((current) => {
+      if (!current) return current;
+      return {
+        ...current,
+        feedbacks: [
+          ...current.feedbacks,
+          {
+            user: language === 'vi' ? 'Người dùng mới' : 'New user',
+            rating: 5,
+            comment: '',
+            createdAt: new Date().toISOString().slice(0, 10)
+          }
+        ]
+      };
+    });
+  };
+  const updateNodeEditorFeedback = (index: number, patch: Partial<CampusNode['feedbacks'][number]>) => {
+    setNodeEditor((current) => {
+      if (!current) return current;
+      return {
+        ...current,
+        feedbacks: current.feedbacks.map((item, i) => (i === index ? { ...item, ...patch } : item))
+      };
+    });
+  };
+  const deleteNodeEditorFeedback = (index: number) => {
+    setNodeEditor((current) => {
+      if (!current) return current;
+      return {
+        ...current,
+        feedbacks: current.feedbacks.filter((_, i) => i !== index)
+      };
+    });
+  };
   const updateMember = (index: number, patch: Partial<TeamMember>) => {
     setMembers((current) => current.map((item, i) => (i === index ? { ...item, ...patch } : item)));
   };
@@ -825,6 +895,26 @@ function App() {
     anchor.click();
     document.body.removeChild(anchor);
     URL.revokeObjectURL(url);
+  };
+  const submitFeedback = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (feedbackStatus === 'sending') return;
+    setFeedbackStatus('sending');
+    const form = event.currentTarget;
+    try {
+      const response = await fetch('https://formspree.io/f/xnjwbqbj', {
+        method: 'POST',
+        body: new FormData(form),
+        headers: { Accept: 'application/json' }
+      });
+      if (!response.ok) {
+        throw new Error('submit_failed');
+      }
+      form.reset();
+      setFeedbackStatus('success');
+    } catch {
+      setFeedbackStatus('error');
+    }
   };
 
   return (
@@ -1175,10 +1265,6 @@ function App() {
               <h1>{t.aboutTitle}</h1>
               <p>{t.aboutDesc}</p>
             </div>
-            <div className="aboutBadgeCol">
-              <span className="aboutBadge">ULIS Smart Campus Map</span>
-              <span className="aboutBadge soft">Team Collaboration</span>
-            </div>
           </section>
 
           <div className="aboutLayout">
@@ -1197,12 +1283,16 @@ function App() {
 
             <section className="aboutFeedback card">
               <h3>{t.feedbackFormTitle}</h3>
-              <form action="https://formspree.io/f/xnjwbqbj" method="POST" className="feedbackForm">
+              <form onSubmit={submitFeedback} className="feedbackForm">
                 <input type="text" name="fullName" placeholder={t.fullName} required />
                 <input type="tel" name="phoneNumber" placeholder={t.phoneNumber} required />
                 <input type="email" name="email" placeholder={t.emailAddress} required />
                 <textarea name="feedback" placeholder={t.feedbackContent} rows={4} required />
-                <button type="submit">{t.sendFeedback}</button>
+                <button type="submit" disabled={feedbackStatus === 'sending'}>
+                  {feedbackStatus === 'sending' ? t.sendingFeedback : t.sendFeedback}
+                </button>
+                {feedbackStatus === 'success' && <p className="formNotice success">{t.feedbackSuccess}</p>}
+                {feedbackStatus === 'error' && <p className="formNotice error">{t.feedbackError}</p>}
               </form>
             </section>
           </div>
@@ -1321,6 +1411,26 @@ function App() {
                       <input value={nodeEditor.rating} onChange={(event) => setNodeEditor((current) => (current ? { ...current, rating: Number(event.target.value) || current.rating } : current))} />
                       <input value={nodeEditor.descriptionVi} onChange={(event) => setNodeEditor((current) => (current ? { ...current, descriptionVi: event.target.value } : current))} />
                       <input value={nodeEditor.descriptionEn} onChange={(event) => setNodeEditor((current) => (current ? { ...current, descriptionEn: event.target.value } : current))} />
+                    </div>
+                    <div className="adminSectionHead">
+                      <h4>{t.feedbackManager}</h4>
+                      <button type="button" className="sectionAddBtn" onClick={addNodeEditorFeedback}>{t.addFeedback}</button>
+                    </div>
+                    <div className="adminTableWrap">
+                      <table>
+                        <thead><tr><th>User</th><th>Rating</th><th>Comment</th><th>Date</th><th>{t.actions}</th></tr></thead>
+                        <tbody>
+                          {nodeEditor.feedbacks.map((item, index) => (
+                            <tr key={`${item.user}-${index}`}>
+                              <td><input value={item.user} onChange={(event) => updateNodeEditorFeedback(index, { user: event.target.value })} /></td>
+                              <td><input value={item.rating} onChange={(event) => updateNodeEditorFeedback(index, { rating: Number(event.target.value) || item.rating })} /></td>
+                              <td><input value={item.comment} onChange={(event) => updateNodeEditorFeedback(index, { comment: event.target.value })} /></td>
+                              <td><input value={item.createdAt} onChange={(event) => updateNodeEditorFeedback(index, { createdAt: event.target.value })} /></td>
+                              <td><button type="button" className="dangerBtn" onClick={() => deleteNodeEditorFeedback(index)}>{t.delete}</button></td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
                     </div>
                     <div className="adminEditorActions">
                       <button type="button" className="neutralBtn" onClick={() => setNodeEditor(null)}>{t.cancel}</button>
