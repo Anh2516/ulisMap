@@ -3,7 +3,7 @@ import { CircleMarker, MapContainer, Popup, TileLayer, Tooltip } from 'react-lea
 import 'leaflet/dist/leaflet.css';
 import { mockCommunityFeedbacks, mockEdges, mockMembers, mockNodes, type CampusNode, type CommunityFeedback, type TeamMember } from './mockData';
 import './App.css';
-type RouteView = 'landing' | 'map' | 'about' | 'feedback' | 'admin' | 'detail';
+type RouteView = 'landing' | 'map' | 'about' | 'feedback' | 'admin' | 'importData' | 'detail';
 type RouteState = { view: RouteView; detailId: string };
 type Language = 'vi' | 'en' | 'zh' | 'ko' | 'ja';
 type ThemeMode = 'light' | 'dark';
@@ -131,6 +131,10 @@ const TEXT = {
     locationDataFilter: 'Dữ liệu địa danh',
     membersDataFilter: 'Dữ liệu về chúng tôi',
     feedbacksDataFilter: 'Dữ liệu feedback',
+    importDataTitle: 'Nhập dữ liệu JSON',
+    importDataDesc: 'Path ẩn: `/importMockData`. Chọn file JSON đã xuất để nạp dữ liệu vào web.',
+    importDataChooseFile: 'Chọn file JSON',
+    importDataSuccess: 'Đã nhập dữ liệu thành công.',
     footerSchool: 'Đại học Quốc gia Hà Nội - Trường Đại học Ngoại ngữ',
     footerAddress: 'Địa chỉ',
     footerAddressValue: 'Số 2 đường Phạm Văn Đồng, Phường Cầu Giấy, Hà Nội',
@@ -237,6 +241,10 @@ const TEXT = {
     locationDataFilter: 'Location data',
     membersDataFilter: 'About us data',
     feedbacksDataFilter: 'Feedback data',
+    importDataTitle: 'Import JSON data',
+    importDataDesc: 'Hidden path: `/importMockData`. Choose exported JSON file to load data into the app.',
+    importDataChooseFile: 'Choose JSON file',
+    importDataSuccess: 'Data imported successfully.',
     footerSchool: 'VNU University of Languages and International Studies',
     footerAddress: 'Address',
     footerAddressValue: 'No. 2 Pham Van Dong Street, Cau Giay Ward, Ha Noi',
@@ -343,6 +351,10 @@ const TEXT = {
     locationDataFilter: '地点数据',
     membersDataFilter: '关于我们数据',
     feedbacksDataFilter: '反馈数据',
+    importDataTitle: '导入 JSON 数据',
+    importDataDesc: '隐藏路径: `/importMockData`。选择已导出的 JSON 文件导入数据。',
+    importDataChooseFile: '选择 JSON 文件',
+    importDataSuccess: '数据导入成功。',
     footerSchool: '河内国家大学 - 外国语大学',
     footerAddress: '地址',
     footerAddressValue: '河内市纸桥郡范文同路 2 号',
@@ -449,6 +461,10 @@ const TEXT = {
     locationDataFilter: '위치 데이터',
     membersDataFilter: '소개 데이터',
     feedbacksDataFilter: '피드백 데이터',
+    importDataTitle: 'JSON 데이터 가져오기',
+    importDataDesc: '숨겨진 경로: `/importMockData`. 내보낸 JSON 파일을 선택해 데이터를 가져오세요.',
+    importDataChooseFile: 'JSON 파일 선택',
+    importDataSuccess: '데이터를 성공적으로 가져왔습니다.',
     footerSchool: '하노이국립대학교 - 외국어대학교',
     footerAddress: '주소',
     footerAddressValue: '하노이 Cau Giay, Pham Van Dong 2번지',
@@ -555,6 +571,10 @@ const TEXT = {
     locationDataFilter: '地点データ',
     membersDataFilter: 'メンバーデータ',
     feedbacksDataFilter: 'フィードバックデータ',
+    importDataTitle: 'JSON データをインポート',
+    importDataDesc: '隠しパス: `/importMockData`。エクスポート済み JSON を選択してデータを読み込みます。',
+    importDataChooseFile: 'JSON ファイルを選択',
+    importDataSuccess: 'データを正常に取り込みました。',
     footerSchool: 'ハノイ国家大学 - 外国語大学',
     footerAddress: '住所',
     footerAddressValue: 'ハノイ市カウザイ区ファムヴァンドン通り2番',
@@ -593,6 +613,7 @@ function getRouteFromPath(pathname: string): RouteView {
   if (pathname === '/ve-chung-toi') return 'about';
   if (pathname === '/phan-hoi') return 'feedback';
   if (pathname === '/adminDashboard') return 'admin';
+  if (pathname === '/importMockData') return 'importData';
   if (pathname.startsWith('/dia-diem/')) return 'detail';
   return 'landing';
 }
@@ -741,6 +762,7 @@ function App() {
   const [isMapLayerOpen, setIsMapLayerOpen] = useState(false);
   const [mapLayerMode, setMapLayerMode] = useState<'default' | 'satellite'>('default');
   const [feedbackStatus, setFeedbackStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
+  const [importStatus, setImportStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [from, setFrom] = useState('gate-main');
   const [selectedId, setSelectedId] = useState<string>('');
   const nodeById = useMemo(() => new Map(nodes.map((node) => [node.id, node])), [nodes]);
@@ -947,6 +969,32 @@ function App() {
     anchor.click();
     document.body.removeChild(anchor);
     URL.revokeObjectURL(url);
+  };
+  const importMockData = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    try {
+      const content = await file.text();
+      const parsed = JSON.parse(content) as Partial<{
+        mockNodes: unknown;
+        mockMembers: unknown;
+        mockCommunityFeedbacks: unknown;
+      }>;
+      if (parsed.mockNodes !== undefined) {
+        setNodes(hydrateNodes(parsed.mockNodes));
+      }
+      if (Array.isArray(parsed.mockMembers)) {
+        setMembers(parsed.mockMembers as TeamMember[]);
+      }
+      if (parsed.mockCommunityFeedbacks !== undefined) {
+        setCommunityFeedbacks(hydrateCommunityFeedbacks(parsed.mockCommunityFeedbacks));
+      }
+      setImportStatus('success');
+    } catch {
+      setImportStatus('error');
+    } finally {
+      event.target.value = '';
+    }
   };
   const submitFeedback = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -1391,6 +1439,19 @@ function App() {
               </form>
             </section>
           </div>
+        </main>
+      )}
+
+      {routeView === 'importData' && (
+        <main className="importDataPage card">
+          <h1>{t.importDataTitle}</h1>
+          <p>{t.importDataDesc}</p>
+          <label className="importBtn">
+            {t.importDataChooseFile}
+            <input type="file" accept="application/json" onChange={importMockData} />
+          </label>
+          {importStatus === 'success' && <p className="formNotice success">{t.importDataSuccess}</p>}
+          {importStatus === 'error' && <p className="formNotice error">{t.importError}</p>}
         </main>
       )}
 
