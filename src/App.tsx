@@ -86,6 +86,9 @@ const TEXT = {
     noRoute: 'Không tìm thấy đường đi phù hợp.',
     mapTitle: 'Bản đồ khuôn viên',
     mapSub: 'Nền vệ tinh + popup thông tin.',
+    mapLayerLabel: 'Kiểu bản đồ',
+    mapLayerDefault: 'Mặc định',
+    mapLayerSatellite: 'Vệ tinh',
     openMaps: 'Mở trên Google Maps',
     aboutTitle: 'Về chúng tôi',
     aboutDesc: 'Nhóm dự án Lạc lối ở ULIS phát triển nền tảng bản đồ nội bộ cho sinh viên và giảng viên.',
@@ -173,6 +176,9 @@ const TEXT = {
     noRoute: 'No suitable route found.',
     mapTitle: 'Campus map',
     mapSub: 'Satellite view + location popup.',
+    mapLayerLabel: 'Map style',
+    mapLayerDefault: 'Default',
+    mapLayerSatellite: 'Satellite',
     openMaps: 'Open in Google Maps',
     aboutTitle: 'About us',
     aboutDesc: 'Lost at ULIS team builds an internal smart mapping platform for students and staff.',
@@ -260,6 +266,9 @@ const TEXT = {
     noRoute: '未找到合适路线。',
     mapTitle: '校园地图',
     mapSub: '标准底图 + 地点弹窗。',
+    mapLayerLabel: '地图样式',
+    mapLayerDefault: '默认',
+    mapLayerSatellite: '卫星',
     openMaps: '在 Google Maps 打开',
     aboutTitle: '关于我们',
     aboutDesc: 'Lost at ULIS 团队为师生打造校内智能地图平台。',
@@ -347,6 +356,9 @@ const TEXT = {
     noRoute: '적절한 경로를 찾을 수 없습니다.',
     mapTitle: '캠퍼스 지도',
     mapSub: '기본 지도 + 위치 팝업.',
+    mapLayerLabel: '지도 스타일',
+    mapLayerDefault: '기본',
+    mapLayerSatellite: '위성',
     openMaps: 'Google Maps에서 열기',
     aboutTitle: '소개',
     aboutDesc: 'Lost at ULIS 팀은 교내 스마트 지도 플랫폼을 개발합니다.',
@@ -434,6 +446,9 @@ const TEXT = {
     noRoute: '適切なルートが見つかりません。',
     mapTitle: 'キャンパスマップ',
     mapSub: '標準地図 + ポップアップ情報。',
+    mapLayerLabel: '地図スタイル',
+    mapLayerDefault: '標準',
+    mapLayerSatellite: '衛星',
     openMaps: 'Google Maps で開く',
     aboutTitle: '私たちについて',
     aboutDesc: 'Lost at ULIS チームは学内スマートマップを開発しています。',
@@ -610,6 +625,11 @@ function App() {
   const [landingQuery, setLandingQuery] = useState('');
   const [landingTypeFilter, setLandingTypeFilter] = useState<string>('all');
   const [isLangOpen, setIsLangOpen] = useState(false);
+  const [isLandingTypeOpen, setIsLandingTypeOpen] = useState(false);
+  const [isFromOpen, setIsFromOpen] = useState(false);
+  const [isToOpen, setIsToOpen] = useState(false);
+  const [isMapLayerOpen, setIsMapLayerOpen] = useState(false);
+  const [mapLayerMode, setMapLayerMode] = useState<'default' | 'satellite'>('default');
   const [from, setFrom] = useState('gate-main');
   const [selectedId, setSelectedId] = useState<string>('');
   const nodeById = useMemo(() => new Map(nodes.map((node) => [node.id, node])), [nodes]);
@@ -644,6 +664,18 @@ function App() {
   const t = TEXT[language];
   const currentLang = LANGUAGE_OPTIONS.find((item) => item.value === language) ?? LANGUAGE_OPTIONS[0];
   const uniqueNodeTypes = useMemo(() => Array.from(new Set(nodes.map((node) => node.type))).filter(Boolean), [nodes]);
+  const fromOptions = useMemo(
+    () => nodes.filter((node) => node.type === 'gate' || node.type === 'campus').map((node) => ({ value: node.id, label: node.label })),
+    [nodes]
+  );
+  const toOptions = useMemo(() => nodes.map((node) => ({ value: node.id, label: node.label })), [nodes]);
+  const landingTypeOptions = useMemo(
+    () => [{ value: 'all', label: t.allTypes }, ...uniqueNodeTypes.map((type) => ({ value: type, label: getTypeLabel(type, language) }))],
+    [t.allTypes, uniqueNodeTypes, language]
+  );
+  const selectedFromLabel = fromOptions.find((item) => item.value === from)?.label ?? from;
+  const selectedToLabel = toOptions.find((item) => item.value === selectedId)?.label ?? t.chooseDestination;
+  const selectedLandingTypeLabel = landingTypeOptions.find((item) => item.value === landingTypeFilter)?.label ?? t.allTypes;
   const landingNodes = useMemo(() => {
     const keyword = normalize(landingQuery);
     return nodes.filter((node) => {
@@ -889,14 +921,28 @@ function App() {
                 onChange={(event) => setLandingQuery(event.target.value)}
                 placeholder={t.landingSearchPlaceholder}
               />
-              <select value={landingTypeFilter} onChange={(event) => setLandingTypeFilter(event.target.value)}>
-                <option value="all">{t.allTypes}</option>
-                {uniqueNodeTypes.map((type) => (
-                  <option key={type} value={type}>
-                    {getTypeLabel(type, language)}
-                  </option>
-                ))}
-              </select>
+              <div className="customSelectWrap">
+                <button type="button" className="customSelectBtn" onClick={() => setIsLandingTypeOpen((prev) => !prev)}>
+                  {selectedLandingTypeLabel}
+                </button>
+                {isLandingTypeOpen && (
+                  <div className="customSelectMenu">
+                    {landingTypeOptions.map((item) => (
+                      <button
+                        key={item.value}
+                        type="button"
+                        className={`customSelectItem ${landingTypeFilter === item.value ? 'activeCustomSelectItem' : ''}`}
+                        onClick={() => {
+                          setLandingTypeFilter(item.value);
+                          setIsLandingTypeOpen(false);
+                        }}
+                      >
+                        {item.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </section>
           <div className="locationGrid">
@@ -1021,18 +1067,61 @@ function App() {
               </div>
               {destination && <p className="hit">{t.foundPrefix}: {destination.label}</p>}
               <label htmlFor="from">{t.fromLabel}</label>
-              <select id="from" value={from} onChange={(event) => setFrom(event.target.value)}>
-                {nodes.filter((node) => node.type === 'gate' || node.type === 'campus').map((node) => <option key={node.id} value={node.id}>{node.label}</option>)}
-              </select>
+              <div id="from" className="customSelectWrap">
+                <button type="button" className="customSelectBtn" onClick={() => setIsFromOpen((prev) => !prev)}>
+                  {selectedFromLabel}
+                </button>
+                {isFromOpen && (
+                  <div className="customSelectMenu">
+                    {fromOptions.map((item) => (
+                      <button
+                        key={item.value}
+                        type="button"
+                        className={`customSelectItem ${from === item.value ? 'activeCustomSelectItem' : ''}`}
+                        onClick={() => {
+                          setFrom(item.value);
+                          setIsFromOpen(false);
+                        }}
+                      >
+                        {item.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
               <label htmlFor="to">{t.toLabel}</label>
-              <select id="to" value={selectedId} onChange={(event) => setSelectedId(event.target.value)}>
-                <option value="">{t.chooseDestination}</option>
-                {nodes.map((node) => (
-                  <option key={node.id} value={node.id}>
-                    {node.label}
-                  </option>
-                ))}
-              </select>
+              <div id="to" className="customSelectWrap">
+                <button type="button" className="customSelectBtn" onClick={() => setIsToOpen((prev) => !prev)}>
+                  {selectedToLabel}
+                </button>
+                {isToOpen && (
+                  <div className="customSelectMenu">
+                    <button
+                      type="button"
+                      className={`customSelectItem ${selectedId === '' ? 'activeCustomSelectItem' : ''}`}
+                      onClick={() => {
+                        setSelectedId('');
+                        setIsToOpen(false);
+                      }}
+                    >
+                      {t.chooseDestination}
+                    </button>
+                    {toOptions.map((item) => (
+                      <button
+                        key={item.value}
+                        type="button"
+                        className={`customSelectItem ${selectedId === item.value ? 'activeCustomSelectItem' : ''}`}
+                        onClick={() => {
+                          setSelectedId(item.value);
+                          setIsToOpen(false);
+                        }}
+                      >
+                        {item.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </section>
             <section className="routeBox card">
               <h2>{t.routeDetail}</h2>
@@ -1050,13 +1139,56 @@ function App() {
             </section>
           </aside>
           <section className="mapSection card">
-            <div className="mapHeader"><h2>{t.mapTitle}</h2><p>{t.mapSub}</p></div>
+            <div className="mapHeader">
+              <h2>{t.mapTitle}</h2>
+              <div className="mapHeaderControls">
+                <label htmlFor="map-layer">{t.mapLayerLabel}</label>
+                <div className="mapLayerMenuWrap">
+                  <button
+                    id="map-layer"
+                    type="button"
+                    className="mapLayerMenuBtn"
+                    onClick={() => setIsMapLayerOpen((prev) => !prev)}
+                  >
+                    {mapLayerMode === 'default' ? t.mapLayerDefault : t.mapLayerSatellite}
+                  </button>
+                  {isMapLayerOpen && (
+                    <div className="mapLayerMenu">
+                      <button
+                        type="button"
+                        className={`mapLayerMenuItem ${mapLayerMode === 'default' ? 'activeMapLayer' : ''}`}
+                        onClick={() => {
+                          setMapLayerMode('default');
+                          setIsMapLayerOpen(false);
+                        }}
+                      >
+                        {t.mapLayerDefault}
+                      </button>
+                      <button
+                        type="button"
+                        className={`mapLayerMenuItem ${mapLayerMode === 'satellite' ? 'activeMapLayer' : ''}`}
+                        onClick={() => {
+                          setMapLayerMode('satellite');
+                          setIsMapLayerOpen(false);
+                        }}
+                      >
+                        {t.mapLayerSatellite}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
             <div className="mapCanvas">
               <MapContainer center={[21.0377, 105.7868]} zoom={16} className="leafletMap" scrollWheelZoom>
-                <TileLayer
-                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                />
+                {mapLayerMode === 'satellite' ? (
+                  <TileLayer attribution='Tiles &copy; <a href="https://www.esri.com/">Esri</a>' url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
+                ) : (
+                  <TileLayer
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                  />
+                )}
                 {nodes.map((node) => (
                   <CircleMarker key={node.id} center={[node.lat, node.lng]} radius={activeId === node.id ? getMarkerRadius(node.type) + 3 : getMarkerRadius(node.type)} pathOptions={{ color: '#ffffff', weight: 2, fillColor: getMarkerColor(node.type), fillOpacity: 0.95 }} eventHandlers={{ click: () => setSelectedId(node.id) }}>
                     <Tooltip permanent direction="top" offset={[0, -8]} opacity={1} className="mapLabel">{node.label}</Tooltip>
@@ -1236,9 +1368,8 @@ function App() {
       <footer className="siteFooter card">
         <h3>{t.footerSchool}</h3>
         <p><strong>{t.footerAddress}:</strong> {t.footerAddressValue}</p>
-        <p><strong>{t.footerPhone}:</strong> <a href="tel:+842437547269">(+84)243.754.7269</a></p>
-        <p><strong>{t.footerFax}:</strong> (+84)243.754.8057</p>
-        <p><strong>{t.footerEmail}:</strong> <a href="mailto:dhnn@vnu.edu.vn">dhnn@vnu.edu.vn</a></p>
+        <p><strong>{t.footerPhone}:</strong> <a href="tel:+84868433805">(+84)868.433.805</a></p>
+        <p><strong>{t.footerEmail}:</strong> <a href="mailto:thuylinh1612006@gmail.com">thuylinh1612006@gmail.com</a></p>
         <div className="footerCopy">{t.footerCopy}</div>
       </footer>
     </div>
