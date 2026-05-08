@@ -15,7 +15,7 @@ const TYPE_LABELS: Record<Language, Record<string, string>> = {
   ko: { campus: '캠퍼스', gate: '정문', hall: '강당', room: '강의실', hub: '허브' },
   ja: { campus: 'キャンパス', gate: '門', hall: 'ホール', room: '教室', hub: 'ハブ' }
 };
-const STORAGE_KEY = 'vnu-map-nodes-v1';
+const STORAGE_KEY = 'vnu-map-nodes-v3';
 const NAV_ITEMS: Array<{ key: 'landing' | 'map' | 'about' | 'feedback'; path: string }> = [
   { key: 'landing', path: '/' },
   { key: 'map', path: '/thao-tac-ban-do' },
@@ -30,7 +30,7 @@ const MEMBER_AVATAR_FALLBACKS = [
   'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=300&q=80'
 ];
 const INTRO_VIDEO_EMBED_URL = 'https://www.youtube.com/embed/DSNvqbEhwHk?rel=0';
-const FEEDBACK_STORAGE_KEY = 'vnu-map-community-feedback-v1';
+const FEEDBACK_STORAGE_KEY = 'vnu-map-community-feedback-v3';
 const LANGUAGE_OPTIONS: Array<{ value: Language; label: string; icon: string }> = [
   { value: 'vi', label: 'Tiếng Việt', icon: 'https://flagcdn.com/w40/vn.png' },
   { value: 'en', label: 'English', icon: 'https://flagcdn.com/w40/gb.png' },
