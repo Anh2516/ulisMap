@@ -1033,7 +1033,7 @@ select:focus {
   margin-top: 8px;
   display: grid;
   gap: 8px;
-  max-height: 290px;
+  max-height: 520px;
   overflow: auto;
   padding-right: 4px;
 }

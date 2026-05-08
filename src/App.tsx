@@ -1255,7 +1255,7 @@ function App() {
                   }}
                   placeholder={t.searchPlaceholder}
                 />
-                {mapSuggestions.length > 0 && (
+                {mapSuggestions.length > 0 && !selectedId && (
                   <div className="suggestList">
                     <span>{t.suggestionTitle}</span>
                     {mapSuggestions.map((node) => (
