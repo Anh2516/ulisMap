@@ -3,6 +3,8 @@ import L from 'leaflet';
 import { CircleMarker, MapContainer, Polyline, Popup, TileLayer, Tooltip, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { mockCommunityFeedbacks, mockEdges, mockMembers, mockNodes, type CampusNode, type CommunityFeedback, type TeamMember } from './mockData';
+import MapLocationReadout from './components/map/MapLocationReadout';
+import RouteDetailsCard from './components/map/RouteDetailsCard';
 import './App.css';
 type RouteView = 'landing' | 'map' | 'about' | 'feedback' | 'admin' | 'importData' | 'detail';
 type RouteState = { view: RouteView; detailId: string };
@@ -1096,16 +1098,6 @@ function App() {
     setMapDestinationId('');
   }, []);
 
-  const swapFromAndDestination = useCallback(() => {
-    if (!mapDestinationId) return;
-    const nextFrom = mapDestinationId;
-    const nextDestId = from;
-    const destNode = nodeById.get(nextDestId);
-    setFrom(nextFrom);
-    setMapDestinationId(nextDestId);
-    setMapSearchDraft(destNode?.label ?? '');
-  }, [from, mapDestinationId, nodeById]);
-
   const requestUserGeolocation = useCallback(() => {
     if (typeof window === 'undefined') return;
     if (!window.isSecureContext) {
@@ -1245,6 +1237,10 @@ function App() {
     }
     return list;
   }, [route]);
+  const routePathLabels = useMemo(
+    () => (route ? route.path.map((id) => nodeById.get(id)?.label ?? id) : []),
+    [route, nodeById]
+  );
   const activeNode = nodeById.get(activeId);
   const fromNode = nodeById.get(from);
 
@@ -1831,9 +1827,6 @@ export const mockCommunityFeedbacks: CommunityFeedback[] = ${JSON.stringify(comm
                   <button type="button" className="ghostBtn smallGhost" onClick={clearMapDestination} disabled={!mapDestinationId}>
                     {t.mapClearDestination}
                   </button>
-                  <button type="button" className="ghostBtn smallGhost" onClick={swapFromAndDestination} disabled={!mapDestinationId}>
-                    {t.mapSwapEnds}
-                  </button>
                 </div>
               </div>
               <div className="mapGeoRow">
@@ -1873,25 +1866,15 @@ export const mockCommunityFeedbacks: CommunityFeedback[] = ${JSON.stringify(comm
                   </>
                 )}
               </div>
-              <div className="mapLocationReadout">
-                <div className="mapLocationLabel">{t.fromLabel}</div>
-                {userGeoPosition ? (
-                  <>
-                    <p className="mapLocationPrimary">
-                      {t.coordsPrefixGps}: {userGeoPosition.lat.toFixed(6)}, {userGeoPosition.lng.toFixed(6)}
-                    </p>
-                    <p className="mapLocationMeta">{t.mapLocationGpsLive}</p>
-                    <p className="mapLocationMeta">
-                      {t.mapInternalRouteFrom} <strong>{nodeById.get(from)?.label ?? '—'}</strong>
-                    </p>
-                  </>
-                ) : (
-                  <>
-                    <p className="mapLocationPrimary">{nodeById.get(from)?.label ?? '—'}</p>
-                    <p className="mapLocationMeta">{t.mapLocationNoGpsHint}</p>
-                  </>
-                )}
-              </div>
+              <MapLocationReadout
+                fromLabel={t.fromLabel}
+                coordsPrefixGps={t.coordsPrefixGps}
+                mapLocationGpsLive={t.mapLocationGpsLive}
+                mapInternalRouteFrom={t.mapInternalRouteFrom}
+                mapLocationNoGpsHint={t.mapLocationNoGpsHint}
+                userGeoPosition={userGeoPosition}
+                fromNodeLabel={nodeById.get(from)?.label ?? '—'}
+              />
               <label htmlFor="to">{t.toLabel}</label>
               <select
                 id="to"
@@ -1911,67 +1894,32 @@ export const mockCommunityFeedbacks: CommunityFeedback[] = ${JSON.stringify(comm
                 ))}
               </select>
             </section>
-            <section className="routeBox card">
-              <h2>{t.routeDetail}</h2>
-              {!mapDestinationId ? (
-                <p>{t.chooseDestination}</p>
-              ) : from === mapDestinationId ? (
-                <p>{t.mapSameStartEnd}</p>
-              ) : route ? (
-                <>
-                  <p>
-                    {t.toPrefix} <strong>{activeNode?.label}</strong>: ~{route.distance} m
-                  </p>
-                  <ol>
-                    {route.path.map((id) => (
-                      <li key={id}>{nodeById.get(id)?.label}</li>
-                    ))}
-                  </ol>
-                  <div className="steps">
-                    {routeSegments.map((segment, segmentIndex) => (
-                      <span key={`${routeBoundsKey}-seg-${segmentIndex}`}>{segment}</span>
-                    ))}
-                  </div>
-                </>
-              ) : null}
-              {mapDestinationId && (
-                <div className="mapStreetRouteRow">
-                  <div className="mapStreetRouteBtns">
-                    <button
-                      type="button"
-                      className="ghostBtn smallGhost"
-                      onClick={() => void fetchStreetWalkingRoute()}
-                      disabled={streetRouteStatus === 'loading'}
-                    >
-                      {t.mapStreetRouteBtn}
-                    </button>
-                    {streetRouteLatLngs.length >= 2 && (
-                      <button type="button" className="ghostBtn smallGhost" onClick={clearStreetWalkingRoute}>
-                        {t.mapStreetRouteClear}
-                      </button>
-                    )}
-                  </div>
-                  {streetRouteStatus === 'loading' && (
-                    <p className="mapGeoMsg mapGeoNeutral">{t.mapStreetRouteLoading}</p>
-                  )}
-                  {streetRouteStatus === 'error' && <p className="mapGeoMsg mapGeoErr">{t.mapStreetRouteError}</p>}
-                  {streetRouteStatus === 'ok' && (
-                    <>
-                      <p className="mapStreetStepsTitle">{t.mapStreetStepsTitle}</p>
-                      {streetRouteSteps.length > 0 ? (
-                        <ol className="mapStreetStepsList">
-                          {streetRouteSteps.map((step, idx) => (
-                            <li key={`street-step-${idx}`}>{step}</li>
-                          ))}
-                        </ol>
-                      ) : (
-                        <p className="mapGeoMsg mapGeoNeutral">{t.mapStreetStepsEmpty}</p>
-                      )}
-                    </>
-                  )}
-                </div>
-              )}
-            </section>
+            <RouteDetailsCard
+              routeDetail={t.routeDetail}
+              mapDestinationId={mapDestinationId}
+              chooseDestination={t.chooseDestination}
+              mapSameStartEnd={t.mapSameStartEnd}
+              isSameStartEnd={from === mapDestinationId}
+              toPrefix={t.toPrefix}
+              destinationLabel={activeNode?.label ?? ''}
+              routeDistance={route?.distance ?? null}
+              routePathLabels={routePathLabels}
+              routeSegments={routeSegments}
+              routeBoundsKey={routeBoundsKey}
+              mapStreetRouteBtn={t.mapStreetRouteBtn}
+              mapStreetRouteClear={t.mapStreetRouteClear}
+              mapStreetRouteLoading={t.mapStreetRouteLoading}
+              mapStreetRouteError={t.mapStreetRouteError}
+              mapStreetStepsTitle={t.mapStreetStepsTitle}
+              mapStreetStepsEmpty={t.mapStreetStepsEmpty}
+              streetRouteStatus={streetRouteStatus}
+              streetRouteLatLngCount={streetRouteLatLngs.length}
+              streetRouteSteps={streetRouteSteps}
+              onFetchStreetWalkingRoute={() => {
+                void fetchStreetWalkingRoute();
+              }}
+              onClearStreetWalkingRoute={clearStreetWalkingRoute}
+            />
           </aside>
           <section className="mapSection card">
             <div className="mapHeader">
