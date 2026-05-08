@@ -1,5 +1,6 @@
- import React, { useCallback, useMemo, useState } from 'react';
-import { CircleMarker, MapContainer, Popup, TileLayer, Tooltip } from 'react-leaflet';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import L from 'leaflet';
+import { CircleMarker, MapContainer, Polyline, Popup, TileLayer, Tooltip, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { mockCommunityFeedbacks, mockEdges, mockMembers, mockNodes, type CampusNode, type CommunityFeedback, type TeamMember } from './mockData';
 import './App.css';
@@ -88,6 +89,34 @@ const TEXT = {
     chooseDestination: 'Chọn điểm đến để bắt đầu chỉ đường.',
     suggestionTitle: 'Gợi ý theo từ khóa',
     noRoute: 'Không tìm thấy đường đi phù hợp.',
+    mapPanelIntro:
+      'Bấm GPS để cập nhật vị trí hiện tại (tọa độ + điểm xuất phát trên đồ thị). Sau đó chọn đích bằng ô tìm kiếm (gợi ý / Enter), danh sách hoặc bấm điểm trên bản đồ. Đường đi ngắn nhất được vẽ và liệt kê các chặng.',
+    mapClearDestination: 'Xóa điểm đến',
+    mapSwapEnds: 'Đổi chiều đi–đến',
+    mapSameStartEnd: 'Điểm xuất phát và đích trùng nhau — hãy đổi một trong hai.',
+    mapRouteLegend: 'Đường gợi ý (ngắn nhất)',
+    mapSearchHint: 'Enter để chọn gợi ý đầu tiên',
+    mapPickAsDestination: 'Chọn làm điểm đến',
+    mapMyLocation: 'Vị trí của tôi (GPS)',
+    mapGeoLoading: 'Đang xin quyền và lấy vị trí...',
+    mapGeoDenied: 'Trình duyệt từ chối quyền vị trí. Hãy cho phép trong biểu tượng khóa / cài đặt trang.',
+    mapGeoUnavailable: 'Không đọc được GPS (thiết bị hoặc trình duyệt không hỗ trợ).',
+    mapGeoTimeout: 'GPS quá lâu không phản hồi. Thử ngoài trời hoặc bật định vị.',
+    mapGeoInsecure: 'Định vị chỉ hoạt động trên HTTPS hoặc localhost.',
+    mapGeoSuccess: 'Đã căn bản đồ theo vị trí của bạn.',
+    mapYouAreHere: 'Bạn đang ở đây (GPS)',
+    mapInternalRouteFrom: 'Đường nội bộ xuất phát từ:',
+    mapLocationNoGpsHint: 'Bấm nút GPS phía trên để hiển thị tọa độ thật của bạn.',
+    mapArOpen: 'Chỉ đường qua camera',
+    mapArClose: 'Đóng camera',
+    mapArHint:
+      'Mở camera sau và la bàn: mũi tên chỉ hướng tới đích (độ chính xác tùy máy; trong nhà thường kém).',
+    mapArCameraDenied: 'Không mở được camera — kiểm tra quyền trình duyệt.',
+    mapArOrientDenied: 'Cần cho phép cảm biến hướng / la bàn để mũi tên chỉ đúng.',
+    mapArNoHeading: 'Đang chờ la bàn… giữ điện thoại ngang và xoay nhẹ.',
+    mapArDistance: 'Ước lượng còn lại',
+    mapArDisclaimer:
+      'Chế độ web đơn giản, không phải AR thực như Google Maps Live View. Tránh dựa hoàn toàn vào mũi tên khi an toàn giao thông.',
     mapTitle: 'Bản đồ khuôn viên',
     mapSub: 'Nền vệ tinh + popup thông tin.',
     mapLayerLabel: 'Kiểu bản đồ',
@@ -198,6 +227,33 @@ const TEXT = {
     chooseDestination: 'Pick a destination to start routing.',
     suggestionTitle: 'Suggestions',
     noRoute: 'No suitable route found.',
+    mapPanelIntro:
+      'Use GPS to update your position (coordinates + graph start). Then pick a destination via search (suggestions / Enter), the destination list, or the map. The shortest path is drawn with step notes.',
+    mapClearDestination: 'Clear destination',
+    mapSwapEnds: 'Swap start / destination',
+    mapSameStartEnd: 'Start and destination are the same — change one of them.',
+    mapRouteLegend: 'Suggested shortest route',
+    mapSearchHint: 'Press Enter to pick the first suggestion',
+    mapPickAsDestination: 'Set as destination',
+    mapMyLocation: 'My location (GPS)',
+    mapGeoLoading: 'Requesting permission and reading location...',
+    mapGeoDenied: 'Location permission denied. Allow it in the site lock/settings.',
+    mapGeoUnavailable: 'Could not read GPS (unsupported device or browser).',
+    mapGeoTimeout: 'GPS timed out. Try again outdoors or enable location services.',
+    mapGeoInsecure: 'Geolocation requires HTTPS or localhost.',
+    mapGeoSuccess: 'Map centered on your location.',
+    mapYouAreHere: 'You are here (GPS)',
+    mapInternalRouteFrom: 'Indoor route starts from:',
+    mapLocationNoGpsHint: 'Use the GPS button above to show your real coordinates.',
+    mapArOpen: 'Camera directions',
+    mapArClose: 'Close',
+    mapArHint: 'Uses rear camera + compass; arrow points toward the destination (often weak indoors).',
+    mapArCameraDenied: 'Camera permission denied.',
+    mapArOrientDenied: 'Motion/orientation permission is required for the arrow.',
+    mapArNoHeading: 'Waiting for compass… hold the phone flat.',
+    mapArDistance: 'Approx. distance',
+    mapArDisclaimer:
+      'Simple web mode, not full AR like Live View. Do not rely on it alone for safety-critical navigation.',
     mapTitle: 'Campus map',
     mapSub: 'Satellite view + location popup.',
     mapLayerLabel: 'Map style',
@@ -308,6 +364,32 @@ const TEXT = {
     chooseDestination: '请选择目的地开始导航。',
     suggestionTitle: '关键词建议',
     noRoute: '未找到合适路线。',
+    mapPanelIntro:
+      '使用 GPS 更新当前位置（坐标与图上出发点），再通过搜索、目的地列表或地图选终点，系统绘制最短路线并列出步骤。',
+    mapClearDestination: '清除目的地',
+    mapSwapEnds: '交换起点 / 终点',
+    mapSameStartEnd: '起点与终点相同，请修改其中一个。',
+    mapRouteLegend: '推荐最短路线',
+    mapSearchHint: '按 Enter 选择第一条建议',
+    mapPickAsDestination: '设为目的地',
+    mapMyLocation: '我的位置 (GPS)',
+    mapGeoLoading: '正在请求权限并获取位置...',
+    mapGeoDenied: '已拒绝位置权限。请在站点设置中允许。',
+    mapGeoUnavailable: '无法获取 GPS（设备或浏览器不支持）。',
+    mapGeoTimeout: 'GPS 超时。请到室外或开启定位后再试。',
+    mapGeoInsecure: '定位需要 HTTPS 或 localhost。',
+    mapGeoSuccess: '地图已定位到您的位置。',
+    mapYouAreHere: '当前位置 (GPS)',
+    mapInternalRouteFrom: '室内路线出发点：',
+    mapLocationNoGpsHint: '点击上方 GPS 按钮显示您的真实坐标。',
+    mapArOpen: '摄像头指路',
+    mapArClose: '关闭',
+    mapArHint: '使用后置摄像头与指南针；箭头指向目的地（室内可能不准）。',
+    mapArCameraDenied: '无法打开摄像头。',
+    mapArOrientDenied: '需要授权设备方向传感器。',
+    mapArNoHeading: '等待指南针… 请将手机放平。',
+    mapArDistance: '大致剩余距离',
+    mapArDisclaimer: '网页简化模式，非完整 AR。请勿完全依赖箭头判断路况。',
     mapTitle: '校园地图',
     mapSub: '标准底图 + 地点弹窗。',
     mapLayerLabel: '地图样式',
@@ -418,6 +500,32 @@ const TEXT = {
     chooseDestination: '길찾기를 시작하려면 목적지를 선택하세요.',
     suggestionTitle: '추천 검색어',
     noRoute: '적절한 경로를 찾을 수 없습니다.',
+    mapPanelIntro:
+      'GPS로 현재 위치를 갱신한 뒤(좌표·그래프 출발점), 검색·목록·지도로 목적지를 고르면 최단 경로가 표시됩니다.',
+    mapClearDestination: '목적지 지우기',
+    mapSwapEnds: '출발·도착 바꾸기',
+    mapSameStartEnd: '출발과 도착이 같습니다. 하나를 바꿔 주세요.',
+    mapRouteLegend: '추천 최단 경로',
+    mapSearchHint: 'Enter로 첫 추천 선택',
+    mapPickAsDestination: '목적지로 선택',
+    mapMyLocation: '내 위치 (GPS)',
+    mapGeoLoading: '권한 요청 및 위치 읽는 중...',
+    mapGeoDenied: '위치 권한이 거부되었습니다. 사이트 설정에서 허용하세요.',
+    mapGeoUnavailable: 'GPS를 읽을 수 없습니다.',
+    mapGeoTimeout: 'GPS 시간 초과. 실외에서 다시 시도하세요.',
+    mapGeoInsecure: 'HTTPS 또는 localhost에서만 동작합니다.',
+    mapGeoSuccess: '지도가 내 위치로 이동했습니다.',
+    mapYouAreHere: '현재 위치 (GPS)',
+    mapInternalRouteFrom: '실내 경로 출발:',
+    mapLocationNoGpsHint: '위의 GPS 버튼으로 실제 좌표를 표시하세요.',
+    mapArOpen: '카메라 길안내',
+    mapArClose: '닫기',
+    mapArHint: '후면 카메라와 나침반 사용. 실내에서는 부정확할 수 있습니다.',
+    mapArCameraDenied: '카메라를 열 수 없습니다.',
+    mapArOrientDenied: '방향 센서 권한이 필요합니다.',
+    mapArNoHeading: '나침반 대기 중…',
+    mapArDistance: '예상 거리',
+    mapArDisclaimer: '웹 간이 모드입니다. 안전 판단에만 의존하지 마세요.',
     mapTitle: '캠퍼스 지도',
     mapSub: '기본 지도 + 위치 팝업.',
     mapLayerLabel: '지도 스타일',
@@ -528,6 +636,32 @@ const TEXT = {
     chooseDestination: '案内を始めるには目的地を選択してください。',
     suggestionTitle: '候補',
     noRoute: '適切なルートが見つかりません。',
+    mapPanelIntro:
+      'GPS で現在地を更新し（座標・グラフ上の出発点）、検索・一覧・地図で目的地を選ぶと最短経路が表示されます。',
+    mapClearDestination: '目的地をクリア',
+    mapSwapEnds: '出発/目的地を入れ替え',
+    mapSameStartEnd: '出発と目的地が同じです。どちらかを変更してください。',
+    mapRouteLegend: '推奨最短経路',
+    mapSearchHint: 'Enter で先頭の候補を選択',
+    mapPickAsDestination: '目的地に設定',
+    mapMyLocation: '現在地 (GPS)',
+    mapGeoLoading: '許可を求め位置情報を取得しています...',
+    mapGeoDenied: '位置情報が拒否されました。サイト設定で許可してください。',
+    mapGeoUnavailable: 'GPS を取得できません。',
+    mapGeoTimeout: 'GPS がタイムアウトしました。屋外で再試行してください。',
+    mapGeoInsecure: 'HTTPS または localhost が必要です。',
+    mapGeoSuccess: 'マップを現在地に合わせました。',
+    mapYouAreHere: '現在地 (GPS)',
+    mapInternalRouteFrom: '屋内経路の出発点：',
+    mapLocationNoGpsHint: '上の GPS ボタンで実座標を表示できます。',
+    mapArOpen: 'カメラで案内',
+    mapArClose: '閉じる',
+    mapArHint: '背面カメラとコンパスを使用。屋内では誤差が大きいことがあります。',
+    mapArCameraDenied: 'カメラを開けませんでした。',
+    mapArOrientDenied: 'デバイスの向きの許可が必要です。',
+    mapArNoHeading: 'コンパス待ち…',
+    mapArDistance: 'およその残り距離',
+    mapArDisclaimer: '簡易ウェブ表示であり完全な AR ではありません。',
     mapTitle: 'キャンパスマップ',
     mapSub: '標準地図 + ポップアップ情報。',
     mapLayerLabel: '地図スタイル',
@@ -591,9 +725,72 @@ const TEXT = {
   }
 } as const;
 
+function MapRouteBounds({ latLngs, boundsKey }: { latLngs: [number, number][]; boundsKey: string }) {
+  const map = useMap();
+  useEffect(() => {
+    if (!boundsKey || latLngs.length < 2) return;
+    map.fitBounds(L.latLngBounds(latLngs), { padding: [48, 48], maxZoom: 17, animate: true });
+  }, [map, boundsKey, latLngs]);
+  return null;
+}
+
+function MapPanToUserLocation({
+  lat,
+  lng,
+  panNonce,
+  zoom
+}: {
+  lat: number | null;
+  lng: number | null;
+  panNonce: number;
+  zoom: number;
+}) {
+  const map = useMap();
+  useEffect(() => {
+    if (!panNonce || lat === null || lng === null) return;
+    map.setView([lat, lng], zoom, { animate: true });
+  }, [map, lat, lng, panNonce, zoom]);
+  return null;
+}
+
 function normalize(input: string) {
   return input.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
 }
+
+/** Approximate distance in meters (fine for campus-scale snapping). */
+function haversineMeters(a: { lat: number; lng: number }, b: { lat: number; lng: number }) {
+  const R = 6371000;
+  const toRad = (deg: number) => (deg * Math.PI) / 180;
+  const dLat = toRad(b.lat - a.lat);
+  const dLng = toRad(b.lng - a.lng);
+  const lat1 = toRad(a.lat);
+  const lat2 = toRad(b.lat);
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.min(1, Math.sqrt(h)));
+}
+
+/** Bearing from (lat1,lng1) to (lat2,lng2), degrees clockwise from north, in [0,360). */
+function bearingDegrees(lat1: number, lng1: number, lat2: number, lng2: number) {
+  const φ1 = (lat1 * Math.PI) / 180;
+  const φ2 = (lat2 * Math.PI) / 180;
+  const Δλ = ((lng2 - lng1) * Math.PI) / 180;
+  const y = Math.sin(Δλ) * Math.cos(φ2);
+  const x = Math.cos(φ1) * Math.sin(φ2) - Math.sin(φ1) * Math.cos(φ2) * Math.cos(Δλ);
+  const θ = Math.atan2(y, x);
+  return ((θ * 180) / Math.PI + 360) % 360;
+}
+
+function headingFromDeviceOrientation(event: DeviceOrientationEvent): number | null {
+  const e = event as DeviceOrientationEvent & { webkitCompassHeading?: number };
+  if (typeof e.webkitCompassHeading === 'number' && !Number.isNaN(e.webkitCompassHeading)) {
+    return e.webkitCompassHeading;
+  }
+  if (event.absolute && event.alpha != null && !Number.isNaN(event.alpha)) {
+    return (360 - event.alpha + 360) % 360;
+  }
+  return null;
+}
+
 function getTypeLabel(type: string, language: Language) {
   return TYPE_LABELS[language][type] ?? type;
 }
@@ -626,15 +823,11 @@ function resolveRouteState(pathname: string): RouteState {
     detailId: getDetailId(pathname)
   };
 }
-function searchDestination(query: string, nodes: CampusNode[]) {
-  const keyword = normalize(query);
-  if (!keyword) return null;
-  return nodes.find((node) => normalize(node.label).includes(keyword) || node.aliases.some((alias) => normalize(alias).includes(keyword))) ?? null;
-}
 function dijkstra(start: string, end: string, nodes: CampusNode[]) {
   const graph = new Map<string, Array<{ to: string; distance: number }>>();
   nodes.forEach((node) => graph.set(node.id, []));
   mockEdges.forEach((edge) => {
+    if (!graph.has(edge.from) || !graph.has(edge.to)) return;
     graph.get(edge.from)?.push({ to: edge.to, distance: edge.distance });
     graph.get(edge.to)?.push({ to: edge.from, distance: edge.distance });
   });
@@ -753,30 +946,233 @@ function App() {
   const [communityFeedbackEditorMode, setCommunityFeedbackEditorMode] = useState<'create' | 'edit'>('edit');
   const [communityFeedbackEditorId, setCommunityFeedbackEditorId] = useState<string | null>(null);
   const [adminDataFilter, setAdminDataFilter] = useState<'all' | 'locations' | 'members' | 'feedbacks'>('all');
-  const [mapQuery, setMapQuery] = useState('');
+  const [mapSearchDraft, setMapSearchDraft] = useState('');
+  const [mapDestinationId, setMapDestinationId] = useState('');
   const [landingQuery, setLandingQuery] = useState('');
   const [landingTypeFilter, setLandingTypeFilter] = useState<string>('all');
   const [isLangOpen, setIsLangOpen] = useState(false);
   const [isMapLayerOpen, setIsMapLayerOpen] = useState(false);
   const [mapLayerMode, setMapLayerMode] = useState<'default' | 'satellite'>('default');
+  const [userGeoPosition, setUserGeoPosition] = useState<{ lat: number; lng: number } | null>(null);
+  const [geoPanNonce, setGeoPanNonce] = useState(0);
+  const [geoUiStatus, setGeoUiStatus] = useState<
+    'idle' | 'loading' | 'success' | 'denied' | 'unavailable' | 'timeout' | 'insecure'
+  >('idle');
+  const [arCameraOpen, setArCameraOpen] = useState(false);
+  const [arHeadingDeg, setArHeadingDeg] = useState<number | null>(null);
+  const [arLivePosition, setArLivePosition] = useState<{ lat: number; lng: number } | null>(null);
+  const [arCameraErrorKey, setArCameraErrorKey] = useState<'cameraDenied' | 'orientDenied' | 'insecure' | null>(null);
+  const arVideoRef = useRef<HTMLVideoElement>(null);
+  const arStreamRef = useRef<MediaStream | null>(null);
   const [feedbackStatus, setFeedbackStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
   const [importStatus, setImportStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [from, setFrom] = useState('gate-main');
-  const [selectedId, setSelectedId] = useState<string>('');
   const nodeById = useMemo(() => new Map(nodes.map((node) => [node.id, node])), [nodes]);
-  const destination = useMemo(() => searchDestination(mapQuery, nodes), [mapQuery, nodes]);
+
+  const commitMapDestination = useCallback((node: CampusNode) => {
+    setMapSearchDraft(node.label);
+    setMapDestinationId(node.id);
+  }, []);
+
+  const clearMapDestination = useCallback(() => {
+    setMapDestinationId('');
+  }, []);
+
+  const swapFromAndDestination = useCallback(() => {
+    if (!mapDestinationId) return;
+    const nextFrom = mapDestinationId;
+    const nextDestId = from;
+    const destNode = nodeById.get(nextDestId);
+    setFrom(nextFrom);
+    setMapDestinationId(nextDestId);
+    setMapSearchDraft(destNode?.label ?? '');
+  }, [from, mapDestinationId, nodeById]);
+
+  const requestUserGeolocation = useCallback(() => {
+    if (typeof window === 'undefined') return;
+    if (!window.isSecureContext) {
+      setGeoUiStatus('insecure');
+      return;
+    }
+    if (!navigator.geolocation) {
+      setGeoUiStatus('unavailable');
+      return;
+    }
+    setGeoUiStatus('loading');
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+        setUserGeoPosition({ lat, lng });
+        setGeoPanNonce((n) => n + 1);
+        setGeoUiStatus('success');
+      },
+      (error: GeolocationPositionError) => {
+        if (error.code === 1) setGeoUiStatus('denied');
+        else if (error.code === 3) setGeoUiStatus('timeout');
+        else setGeoUiStatus('unavailable');
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 30000 }
+    );
+  }, []);
+
+  const closeArCamera = useCallback(() => {
+    arStreamRef.current?.getTracks().forEach((track) => track.stop());
+    arStreamRef.current = null;
+    const video = arVideoRef.current;
+    if (video) video.srcObject = null;
+    setArCameraOpen(false);
+    setArHeadingDeg(null);
+    setArLivePosition(null);
+  }, []);
+
+  const openArCamera = useCallback(async () => {
+    const dest = mapDestinationId ? nodeById.get(mapDestinationId) : undefined;
+    if (!dest) return;
+    setArCameraErrorKey(null);
+    if (typeof window !== 'undefined' && !window.isSecureContext) {
+      setArCameraErrorKey('insecure');
+      return;
+    }
+    try {
+      const orientationCtor = DeviceOrientationEvent as unknown as {
+        requestPermission?: () => Promise<'granted' | 'denied'>;
+      };
+      if (typeof orientationCtor.requestPermission === 'function') {
+        const perm = await orientationCtor.requestPermission();
+        if (perm !== 'granted') {
+          setArCameraErrorKey('orientDenied');
+          return;
+        }
+      }
+      if (!navigator.mediaDevices?.getUserMedia) {
+        setArCameraErrorKey('cameraDenied');
+        return;
+      }
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: 'environment' } },
+        audio: false
+      });
+      arStreamRef.current = stream;
+      setArLivePosition(userGeoPosition);
+      setArCameraOpen(true);
+    } catch {
+      setArCameraErrorKey('cameraDenied');
+    }
+  }, [mapDestinationId, nodeById, userGeoPosition]);
+
+  useEffect(() => {
+    if (routeState.view !== 'map' && arCameraOpen) closeArCamera();
+  }, [routeState.view, arCameraOpen, closeArCamera]);
+
+  useEffect(() => {
+    if (arCameraOpen && !mapDestinationId) closeArCamera();
+  }, [arCameraOpen, mapDestinationId, closeArCamera]);
+
+  useEffect(() => {
+    setArCameraErrorKey(null);
+  }, [mapDestinationId]);
+
+  useEffect(() => {
+    if (!arCameraOpen) return;
+    const video = arVideoRef.current;
+    const stream = arStreamRef.current;
+    if (video && stream) {
+      video.srcObject = stream;
+      void video.play().catch(() => {});
+    }
+  }, [arCameraOpen]);
+
+  useEffect(() => {
+    if (!arCameraOpen) return;
+    const onOrient = (event: DeviceOrientationEvent) => {
+      const h = headingFromDeviceOrientation(event);
+      if (h != null) setArHeadingDeg(h);
+    };
+    window.addEventListener('deviceorientation', onOrient, true);
+    return () => window.removeEventListener('deviceorientation', onOrient, true);
+  }, [arCameraOpen]);
+
+  useEffect(() => {
+    if (!arCameraOpen || !navigator.geolocation) return;
+    const watchId = navigator.geolocation.watchPosition(
+      (position) => {
+        setArLivePosition({
+          lat: position.coords.latitude,
+          lng: position.coords.longitude
+        });
+      },
+      () => {},
+      { enableHighAccuracy: true, maximumAge: 2500 }
+    );
+    return () => navigator.geolocation.clearWatch(watchId);
+  }, [arCameraOpen]);
+
+  const routeStartCandidates = useMemo(
+    () => nodes.filter((node) => node.type === 'gate' || node.type === 'campus' || node.type === 'hub'),
+    [nodes]
+  );
+
+  useEffect(() => {
+    if (!userGeoPosition || routeStartCandidates.length === 0) return;
+    let bestId = routeStartCandidates[0].id;
+    let bestD = Infinity;
+    for (const node of routeStartCandidates) {
+      const d = haversineMeters(userGeoPosition, { lat: node.lat, lng: node.lng });
+      if (d < bestD) {
+        bestD = d;
+        bestId = node.id;
+      }
+    }
+    setFrom(bestId);
+  }, [userGeoPosition, routeStartCandidates]);
+
   const mapSuggestions = useMemo(() => {
-    const keyword = normalize(mapQuery);
+    const keyword = normalize(mapSearchDraft);
     if (!keyword) return [];
-    return nodes
-      .filter((node) => normalize(node.label).includes(keyword) || node.aliases.some((alias) => normalize(alias).includes(keyword)))
-      .slice(0, 6);
-  }, [mapQuery, nodes]);
-  const activeId = selectedId || destination?.id || '';
+    const scored = nodes
+      .map((node) => {
+        const nl = normalize(node.label);
+        let score = 0;
+        if (nl === keyword) score = 100;
+        else if (nl.startsWith(keyword)) score = 80;
+        else if (nl.includes(keyword)) score = 60;
+        else {
+          const aliasBest = Math.max(
+            0,
+            ...node.aliases.map((alias) => {
+              const na = normalize(alias);
+              if (na === keyword) return 95;
+              if (na.startsWith(keyword)) return 75;
+              if (na.includes(keyword)) return 55;
+              return 0;
+            })
+          );
+          if (!aliasBest) return null;
+          score = aliasBest;
+        }
+        return { node, score };
+      })
+      .filter((item): item is { node: CampusNode; score: number } => Boolean(item));
+    scored.sort((a, b) => b.score - a.score);
+    return scored.slice(0, 8).map((item) => item.node);
+  }, [mapSearchDraft, nodes]);
+
+  const activeId = mapDestinationId;
   const route = useMemo(() => {
-    if (!activeId || from === activeId) return null;
-    return dijkstra(from, activeId, nodes);
-  }, [from, activeId, nodes]);
+    if (!mapDestinationId || from === mapDestinationId) return null;
+    return dijkstra(from, mapDestinationId, nodes);
+  }, [from, mapDestinationId, nodes]);
+  const routeLatLngs = useMemo(() => {
+    if (!route) return [] as [number, number][];
+    const coords: [number, number][] = [];
+    for (const id of route.path) {
+      const n = nodeById.get(id);
+      if (n) coords.push([n.lat, n.lng]);
+    }
+    return coords;
+  }, [route, nodeById]);
+  const routeBoundsKey = route?.path.join('|') ?? '';
   const routeSegments = useMemo(() => {
     if (!route) return [];
     const list: string[] = [];
@@ -789,6 +1185,19 @@ function App() {
     return list;
   }, [route]);
   const activeNode = nodeById.get(activeId);
+  const arPositionForArrow = arLivePosition ?? userGeoPosition;
+  const arOverlayMetrics = useMemo(() => {
+    const dest = mapDestinationId ? nodeById.get(mapDestinationId) : undefined;
+    if (!dest || !arPositionForArrow) return { bearing: null as number | null, dist: null as number | null };
+    return {
+      bearing: bearingDegrees(arPositionForArrow.lat, arPositionForArrow.lng, dest.lat, dest.lng),
+      dist: haversineMeters(arPositionForArrow, { lat: dest.lat, lng: dest.lng })
+    };
+  }, [mapDestinationId, nodeById, arPositionForArrow]);
+  const arArrowRotateDeg =
+    arOverlayMetrics.bearing != null && arHeadingDeg != null
+      ? ((arOverlayMetrics.bearing - arHeadingDeg + 540) % 360) - 180
+      : 0;
   const fromNode = nodeById.get(from);
   const detailNode = nodeById.get(routeState.detailId);
   const routeView = routeState.view;
@@ -1276,48 +1685,112 @@ export const mockCommunityFeedbacks: CommunityFeedback[] = ${JSON.stringify(comm
       )}
 
       {routeView === 'map' && (
+        <>
         <main className="content">
           <aside className="panel">
             <section className="card searchCard">
               <h2>{t.searchTitle}</h2>
+              <p className="mapPanelIntro">{t.mapPanelIntro}</p>
               <label htmlFor="search">{t.searchLabel}</label>
               <div className="searchSuggestWrap">
                 <input
                   id="search"
-                  value={mapQuery}
+                  value={mapSearchDraft}
                   onChange={(event) => {
-                    setMapQuery(event.target.value);
-                    setSelectedId('');
+                    setMapSearchDraft(event.target.value);
+                    setMapDestinationId('');
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key !== 'Enter') return;
+                    const first = mapSuggestions[0];
+                    if (first) {
+                      event.preventDefault();
+                      commitMapDestination(first);
+                    }
                   }}
                   placeholder={t.searchPlaceholder}
+                  autoComplete="off"
                 />
-                {mapSuggestions.length > 0 && !selectedId && (
+                <p className="mapSearchHint">{t.mapSearchHint}</p>
+                {mapSuggestions.length > 0 && !mapDestinationId && (
                   <div className="suggestList">
                     <span>{t.suggestionTitle}</span>
                     {mapSuggestions.map((node) => (
-                      <button
-                        key={node.id}
-                        type="button"
-                        onClick={() => {
-                          setMapQuery(node.label);
-                          setSelectedId(node.id);
-                        }}
-                      >
+                      <button key={node.id} type="button" onClick={() => commitMapDestination(node)}>
                         {node.label}
                       </button>
                     ))}
                   </div>
                 )}
               </div>
-              {destination && <p className="hit">{t.foundPrefix}: {destination.label}</p>}
-              <label htmlFor="from">{t.fromLabel}</label>
-              <select id="from" value={from} onChange={(event) => setFrom(event.target.value)}>
-                {nodes
-                  .filter((node) => node.type === 'gate' || node.type === 'campus')
-                  .map((node) => <option key={node.id} value={node.id}>{node.label}</option>)}
-              </select>
+              <div className="mapDestToolbar">
+                {mapDestinationId ? (
+                  <p className="hit mapDestChosen">
+                    {t.toPrefix}: <strong>{nodeById.get(mapDestinationId)?.label}</strong>
+                  </p>
+                ) : (
+                  <p className="mapDestPlaceholder">{t.chooseDestination}</p>
+                )}
+                <div className="mapDestActions">
+                  <button type="button" className="ghostBtn smallGhost" onClick={clearMapDestination} disabled={!mapDestinationId}>
+                    {t.mapClearDestination}
+                  </button>
+                  <button type="button" className="ghostBtn smallGhost" onClick={swapFromAndDestination} disabled={!mapDestinationId}>
+                    {t.mapSwapEnds}
+                  </button>
+                </div>
+              </div>
+              <div className="mapGeoRow">
+                <button
+                  type="button"
+                  className="primaryBtn mapGeoBtn"
+                  onClick={requestUserGeolocation}
+                  disabled={geoUiStatus === 'loading'}
+                >
+                  {t.mapMyLocation}
+                </button>
+                {geoUiStatus !== 'idle' && (
+                  <p
+                    className={`mapGeoMsg ${geoUiStatus === 'success' ? 'mapGeoOk' : geoUiStatus === 'loading' ? 'mapGeoNeutral' : 'mapGeoErr'}`}
+                  >
+                    {geoUiStatus === 'loading' && t.mapGeoLoading}
+                    {geoUiStatus === 'success' && t.mapGeoSuccess}
+                    {geoUiStatus === 'denied' && t.mapGeoDenied}
+                    {geoUiStatus === 'timeout' && t.mapGeoTimeout}
+                    {geoUiStatus === 'unavailable' && t.mapGeoUnavailable}
+                    {geoUiStatus === 'insecure' && t.mapGeoInsecure}
+                  </p>
+                )}
+              </div>
+              <div className="mapLocationReadout">
+                <div className="mapLocationLabel">{t.fromLabel}</div>
+                {userGeoPosition ? (
+                  <>
+                    <p className="mapLocationPrimary">
+                      {t.coordsPrefix}: {userGeoPosition.lat.toFixed(6)}, {userGeoPosition.lng.toFixed(6)}
+                    </p>
+                    <p className="mapLocationMeta">
+                      {t.mapInternalRouteFrom} <strong>{nodeById.get(from)?.label ?? '—'}</strong>
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="mapLocationPrimary">{nodeById.get(from)?.label ?? '—'}</p>
+                    <p className="mapLocationMeta">{t.mapLocationNoGpsHint}</p>
+                  </>
+                )}
+              </div>
               <label htmlFor="to">{t.toLabel}</label>
-              <select id="to" value={selectedId} onChange={(event) => setSelectedId(event.target.value)}>
+              <select
+                id="to"
+                value={mapDestinationId}
+                onChange={(event) => {
+                  const id = event.target.value;
+                  setMapDestinationId(id);
+                  const node = nodeById.get(id);
+                  setMapSearchDraft(node?.label ?? '');
+                }}
+              >
                 <option value="">{t.chooseDestination}</option>
                 {nodes.map((node) => (
                   <option key={node.id} value={node.id}>
@@ -1325,25 +1798,55 @@ export const mockCommunityFeedbacks: CommunityFeedback[] = ${JSON.stringify(comm
                   </option>
                 ))}
               </select>
+              {mapDestinationId && activeNode && (
+                <div className="mapArRow">
+                  <button type="button" className="ghostBtn smallGhost mapArOpenBtn" onClick={() => void openArCamera()}>
+                    {t.mapArOpen}
+                  </button>
+                  <p className="mapArHint">{t.mapArHint}</p>
+                  {arCameraErrorKey && (
+                    <p className="mapGeoMsg mapGeoErr">
+                      {arCameraErrorKey === 'insecure' && t.mapGeoInsecure}
+                      {arCameraErrorKey === 'orientDenied' && t.mapArOrientDenied}
+                      {arCameraErrorKey === 'cameraDenied' && t.mapArCameraDenied}
+                    </p>
+                  )}
+                </div>
+              )}
             </section>
             <section className="routeBox card">
               <h2>{t.routeDetail}</h2>
-              {activeNode && route ? (
-                <>
-                  <p>{t.toPrefix} <strong>{activeNode.label}</strong>: ~{route.distance} m</p>
-                  <ol>{route.path.map((id) => <li key={id}>{nodeById.get(id)?.label}</li>)}</ol>
-                  <div className="steps">{routeSegments.map((segment) => <span key={segment}>{segment}</span>)}</div>
-                </>
-              ) : activeNode ? (
-                <p>{t.noRoute}</p>
-              ) : (
+              {!mapDestinationId ? (
                 <p>{t.chooseDestination}</p>
+              ) : from === mapDestinationId ? (
+                <p>{t.mapSameStartEnd}</p>
+              ) : route ? (
+                <>
+                  <p>
+                    {t.toPrefix} <strong>{activeNode?.label}</strong>: ~{route.distance} m
+                  </p>
+                  <ol>
+                    {route.path.map((id) => (
+                      <li key={id}>{nodeById.get(id)?.label}</li>
+                    ))}
+                  </ol>
+                  <div className="steps">
+                    {routeSegments.map((segment, segmentIndex) => (
+                      <span key={`${routeBoundsKey}-seg-${segmentIndex}`}>{segment}</span>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <p>{t.noRoute}</p>
               )}
             </section>
           </aside>
           <section className="mapSection card">
             <div className="mapHeader">
-              <h2>{t.mapTitle}</h2>
+              <div>
+                <h2>{t.mapTitle}</h2>
+                {routeLatLngs.length >= 2 && <p className="mapRouteLegend">{t.mapRouteLegend}</p>}
+              </div>
               <div className="mapHeaderControls">
                 <label htmlFor="map-layer">{t.mapLayerLabel}</label>
                 <div className="mapLayerMenuWrap">
@@ -1392,23 +1895,143 @@ export const mockCommunityFeedbacks: CommunityFeedback[] = ${JSON.stringify(comm
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                   />
                 )}
+                {routeLatLngs.length >= 2 && (
+                  <Polyline
+                    positions={routeLatLngs}
+                    pathOptions={{
+                      color: '#2563eb',
+                      weight: 6,
+                      opacity: 0.85,
+                      lineCap: 'round',
+                      lineJoin: 'round'
+                    }}
+                  />
+                )}
+                <MapRouteBounds latLngs={routeLatLngs} boundsKey={routeBoundsKey} />
+                <MapPanToUserLocation
+                  lat={userGeoPosition?.lat ?? null}
+                  lng={userGeoPosition?.lng ?? null}
+                  panNonce={geoPanNonce}
+                  zoom={18}
+                />
                 {nodes.map((node) => (
-                  <CircleMarker key={node.id} center={[node.lat, node.lng]} radius={activeId === node.id ? getMarkerRadius(node.type) + 3 : getMarkerRadius(node.type)} pathOptions={{ color: '#ffffff', weight: 2, fillColor: getMarkerColor(node.type), fillOpacity: 0.95 }} eventHandlers={{ click: () => setSelectedId(node.id) }}>
-                    <Tooltip permanent direction="top" offset={[0, -8]} opacity={1} className="mapLabel">{node.label}</Tooltip>
+                  <CircleMarker
+                    key={node.id}
+                    center={[node.lat, node.lng]}
+                    radius={activeId === node.id ? getMarkerRadius(node.type) + 3 : getMarkerRadius(node.type)}
+                    pathOptions={{
+                      color: '#ffffff',
+                      weight: 2,
+                      fillColor: getMarkerColor(node.type),
+                      fillOpacity: 0.95
+                    }}
+                    eventHandlers={{
+                      click: () => {
+                        commitMapDestination(node);
+                      }
+                    }}
+                  >
+                    <Tooltip permanent direction="top" offset={[0, -8]} opacity={1} className="mapLabel">
+                      {node.label}
+                    </Tooltip>
                     <Popup>
                       <div className="mapPopup">
                         <h3>{node.label}</h3>
                         <p>{getTypeLabel(node.type, language)}</p>
-                        <a href={`https://www.google.com/maps/dir/?api=1&origin=${fromNode?.lat ?? node.lat},${fromNode?.lng ?? node.lng}&destination=${node.lat},${node.lng}&travelmode=walking`} target="_blank" rel="noreferrer">{t.openMaps}</a>
+                        <button type="button" className="linkBtn mapPopupDestBtn" onClick={() => commitMapDestination(node)}>
+                          {t.mapPickAsDestination}
+                        </button>
+                        <a
+                          href={`https://www.google.com/maps/dir/?api=1&origin=${fromNode?.lat ?? node.lat},${fromNode?.lng ?? node.lng}&destination=${node.lat},${node.lng}&travelmode=walking`}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          {t.openMaps}
+                        </a>
                       </div>
                     </Popup>
                   </CircleMarker>
                 ))}
+                {userGeoPosition && (
+                  <CircleMarker
+                    center={[userGeoPosition.lat, userGeoPosition.lng]}
+                    radius={11}
+                    pathOptions={{
+                      color: '#ffffff',
+                      weight: 3,
+                      fillColor: '#0ea5e9',
+                      fillOpacity: 1
+                    }}
+                  >
+                    <Tooltip permanent direction="top" offset={[0, -10]} opacity={1} className="mapLabel mapUserGeoLabel">
+                      {t.mapYouAreHere}
+                    </Tooltip>
+                    <Popup>
+                      <div className="mapPopup">
+                        <h3>{t.mapYouAreHere}</h3>
+                        <p>
+                          {t.coordsPrefix}: {userGeoPosition.lat.toFixed(6)}, {userGeoPosition.lng.toFixed(6)}
+                        </p>
+                        <a
+                          href={`https://www.google.com/maps/search/?api=1&query=${userGeoPosition.lat},${userGeoPosition.lng}`}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          {t.openLocation}
+                        </a>
+                      </div>
+                    </Popup>
+                  </CircleMarker>
+                )}
               </MapContainer>
-              {activeNode && <div className="mapInfoCard"><strong>{activeNode.label}</strong><span>{getTypeLabel(activeNode.type, language)} • {route?.distance ?? 0}m</span></div>}
+              {activeNode && (
+                <div className="mapInfoCard">
+                  <strong>{activeNode.label}</strong>
+                  <span>
+                    {getTypeLabel(activeNode.type, language)}
+                    {route ? ` • ~${route.distance} m` : ''}
+                  </span>
+                </div>
+              )}
             </div>
           </section>
         </main>
+        {arCameraOpen && activeNode && (
+          <div className="arCameraOverlay" role="dialog" aria-modal="true" aria-label={t.mapArOpen}>
+            <video ref={arVideoRef} className="arCameraVideo" autoPlay playsInline muted />
+            <div className="arCameraHud">
+              <div className="arCameraTopBar">
+                <button type="button" className="arCameraCloseBtn" onClick={closeArCamera}>
+                  {t.mapArClose}
+                </button>
+              </div>
+              <div className="arArrowStage">
+                <div className="arArrowPivot" style={{ transform: `rotate(${arArrowRotateDeg}deg)` }} aria-hidden>
+                  <svg className="arArrowSvg" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+                    <polygon
+                      points="60,12 108,96 12,96"
+                      fill="#fbbf24"
+                      stroke="#1e293b"
+                      strokeWidth="5"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </div>
+                {arHeadingDeg == null && <p className="arHeadingWait">{t.mapArNoHeading}</p>}
+              </div>
+              <div className="arCameraFooter">
+                <strong className="arDestTitle">{activeNode.label}</strong>
+                {arOverlayMetrics.dist != null && (
+                  <p className="arDistLine">
+                    {t.mapArDistance}: ~{Math.round(arOverlayMetrics.dist)} m
+                  </p>
+                )}
+                <p className="arDisclaimer">{t.mapArDisclaimer}</p>
+              </div>
+            </div>
+          </div>
+        )}
+        </>
       )}
 
       {routeView === 'about' && (

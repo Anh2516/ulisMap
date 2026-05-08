@@ -706,6 +706,280 @@
   z-index: 1;
 }
 
+.mapPanelIntro {
+  margin: 0 0 12px;
+  font-size: 0.88rem;
+  line-height: 1.55;
+  color: var(--muted);
+}
+
+.mapSearchHint {
+  margin: 0;
+  font-size: 0.74rem;
+  color: var(--muted);
+}
+
+.mapDestToolbar {
+  margin-top: 10px;
+  display: grid;
+  gap: 8px;
+}
+
+.mapDestChosen {
+  margin: 0;
+}
+
+.mapDestPlaceholder {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.mapDestActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.mapDestActions .ghostBtn.smallGhost {
+  padding: 6px 11px;
+  font-size: 0.82rem;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  color: var(--text);
+  transform: none;
+  box-shadow: none;
+}
+
+.mapDestActions .ghostBtn.smallGhost:hover:not(:disabled) {
+  border-color: #93c5fd;
+  background: #eff6ff;
+  transform: translateY(-1px);
+}
+
+.mapDestActions .ghostBtn.smallGhost:disabled {
+  opacity: 0.42;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.mapRouteLegend {
+  margin: 4px 0 0;
+  font-size: 0.82rem;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.mapPopupDestBtn {
+  display: block;
+  margin: 8px 0;
+  padding: 0;
+}
+
+.app.dark .mapDestActions .ghostBtn.smallGhost:hover:not(:disabled) {
+  background: rgba(59, 130, 246, 0.14);
+  border-color: rgba(147, 197, 253, 0.35);
+}
+
+.mapLocationReadout {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+}
+
+.mapLocationLabel {
+  font-weight: 700;
+  font-size: 0.92rem;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+
+.mapLocationPrimary {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text);
+  word-break: break-word;
+}
+
+.mapLocationMeta {
+  margin: 8px 0 0;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+.mapGeoRow {
+  margin-top: 14px;
+  display: grid;
+  gap: 8px;
+}
+
+.mapGeoBtn {
+  width: 100%;
+  box-sizing: border-box;
+  justify-self: stretch;
+}
+
+.primaryBtn.mapGeoBtn:disabled {
+  opacity: 0.65;
+  cursor: wait;
+  transform: none;
+  box-shadow: none;
+}
+
+.mapGeoMsg {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.mapGeoNeutral {
+  color: var(--muted);
+}
+
+.mapGeoOk {
+  color: var(--success);
+  font-weight: 600;
+}
+
+.mapGeoErr {
+  color: #b91c1c;
+  font-weight: 600;
+}
+
+.app.dark .mapGeoErr {
+  color: #fca5a5;
+}
+
+.mapArRow {
+  margin-top: 12px;
+  display: grid;
+  gap: 6px;
+}
+
+.mapArHint {
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+.mapArOpenBtn {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.arCameraOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200000;
+  background: #000;
+}
+
+.arCameraVideo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.arCameraHud {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  pointer-events: none;
+}
+
+.arCameraTopBar {
+  pointer-events: auto;
+  display: flex;
+  justify-content: flex-end;
+  padding: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) 8px
+    max(12px, env(safe-area-inset-left));
+}
+
+.arCameraCloseBtn {
+  border: none;
+  border-radius: 999px;
+  padding: 10px 18px;
+  font-weight: 700;
+  cursor: pointer;
+  background: rgba(15, 23, 42, 0.65);
+  color: #f8fafc;
+  backdrop-filter: blur(8px);
+}
+
+.arCameraCloseBtn:hover {
+  background: rgba(15, 23, 42, 0.85);
+}
+
+.arArrowStage {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 0 16px;
+}
+
+.arArrowPivot {
+  width: min(52vw, 240px);
+  height: min(52vw, 240px);
+  filter: drop-shadow(0 10px 28px rgba(0, 0, 0, 0.6));
+  transition: transform 0.12s ease-out;
+}
+
+.arArrowSvg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.arHeadingWait {
+  margin: 0;
+  color: #f8fafc;
+  text-align: center;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9);
+  max-width: 280px;
+}
+
+.arCameraFooter {
+  pointer-events: auto;
+  padding: 20px 18px max(22px, env(safe-area-inset-bottom));
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.82));
+  color: #f8fafc;
+}
+
+.arDestTitle {
+  font-size: 1.12rem;
+  display: block;
+  margin-bottom: 8px;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.65);
+}
+
+.arDistLine {
+  margin: 0;
+  font-size: 0.96rem;
+  opacity: 0.96;
+}
+
+.arDisclaimer {
+  margin: 12px 0 0;
+  font-size: 0.74rem;
+  line-height: 1.45;
+  opacity: 0.82;
+}
+
 .card h2 {
   margin: 0 0 10px;
 }
