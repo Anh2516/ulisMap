@@ -120,6 +120,8 @@ const TEXT = {
     mapStreetRouteOkGoogle: 'Đường đi bộ — Google Maps',
     mapStreetRouteOkOsrm: 'Đường đi bộ — OSRM (OpenStreetMap)',
     mapStreetRouteError: 'Không lấy được đường đi ngoài phố. Thử lại.',
+    mapStreetStepsTitle: 'Các bước chỉ đường (đường phố)',
+    mapStreetStepsEmpty: 'Không có bước chi tiết cho tuyến này.',
     mapStreetRouteHint:
       'Đặt REACT_APP_GOOGLE_MAPS_API_KEY trong .env để ưu tiên Google; không có key thì dùng OSRM (máy demo, có giới hạn).',
     mapStreetRouteLegendDuo: 'Cam: đường phố · Xanh: lộ trình nội bộ ULIS',
@@ -262,6 +264,8 @@ const TEXT = {
     mapStreetRouteOkGoogle: 'Walking — Google Maps',
     mapStreetRouteOkOsrm: 'Walking — OSRM (OpenStreetMap)',
     mapStreetRouteError: 'Could not load a street route. Try again.',
+    mapStreetStepsTitle: 'Street turn-by-turn steps',
+    mapStreetStepsEmpty: 'No detailed step text available for this route.',
     mapStreetRouteHint: 'Set REACT_APP_GOOGLE_MAPS_API_KEY in .env for Google; otherwise OSRM demo (rate limits).',
     mapStreetRouteLegendDuo: 'Orange: street · Blue: ULIS indoor graph',
     mapTitle: 'Campus map',
@@ -403,6 +407,8 @@ const TEXT = {
     mapStreetRouteOkGoogle: '步行 — Google Maps',
     mapStreetRouteOkOsrm: '步行 — OSRM（OpenStreetMap）',
     mapStreetRouteError: '无法获取沿路路线。',
+    mapStreetStepsTitle: '道路逐步指引',
+    mapStreetStepsEmpty: '该路线暂无详细步骤文本。',
     mapStreetRouteHint: '在 .env 设置 REACT_APP_GOOGLE_MAPS_API_KEY 优先使用 Google；否则使用 OSRM 演示服务。',
     mapStreetRouteLegendDuo: '橙：沿路 · 蓝：校内 ULIS 路线',
     mapTitle: '校园地图',
@@ -544,6 +550,8 @@ const TEXT = {
     mapStreetRouteOkGoogle: '도보 — Google Maps',
     mapStreetRouteOkOsrm: '도보 — OSRM(OpenStreetMap)',
     mapStreetRouteError: '도로 경로를 가져올 수 없습니다.',
+    mapStreetStepsTitle: '도로 단계별 안내',
+    mapStreetStepsEmpty: '이 경로의 상세 단계 텍스트가 없습니다.',
     mapStreetRouteHint: '.env에 REACT_APP_GOOGLE_MAPS_API_KEY 설정 시 Google 우선, 없으면 OSRM 데모.',
     mapStreetRouteLegendDuo: '주황: 도로 · 파랑: ULIS 실내',
     mapTitle: '캠퍼스 지도',
@@ -685,6 +693,8 @@ const TEXT = {
     mapStreetRouteOkGoogle: '徒歩 — Google Maps',
     mapStreetRouteOkOsrm: '徒歩 — OSRM（OpenStreetMap）',
     mapStreetRouteError: '道沿い経路を取得できませんでした。',
+    mapStreetStepsTitle: '道沿いのステップ案内',
+    mapStreetStepsEmpty: 'この経路の詳細ステップはありません。',
     mapStreetRouteHint: '.env に REACT_APP_GOOGLE_MAPS_API_KEY があれば Google 優先、なければ OSRM デモ。',
     mapStreetRouteLegendDuo: '橙：道沿い · 青：ULIS 屋内',
     mapTitle: 'キャンパスマップ',
@@ -797,15 +807,30 @@ function haversineMeters(a: { lat: number; lng: number }, b: { lat: number; lng:
 async function fetchOsrmWalkingPolyline(
   origin: { lat: number; lng: number },
   dest: { lat: number; lng: number }
-): Promise<[number, number][]> {
-  const url = `https://router.project-osrm.org/route/v1/foot/${origin.lng},${origin.lat};${dest.lng},${dest.lat}?overview=full&geometries=geojson`;
+): Promise<{ latLngs: [number, number][]; steps: string[]; distanceMeters: number | null }> {
+  const url = `https://router.project-osrm.org/route/v1/foot/${origin.lng},${origin.lat};${dest.lng},${dest.lat}?overview=full&geometries=geojson&steps=true`;
   const res = await fetch(url);
   const data = (await res.json()) as {
     code?: string;
-    routes?: Array<{ geometry?: { coordinates?: [number, number][] } }>;
+    routes?: Array<{
+      distance?: number;
+      geometry?: { coordinates?: [number, number][] };
+      legs?: Array<{ steps?: Array<{ name?: string; distance?: number }> }>;
+    }>;
   };
-  if (data.code !== 'Ok' || !data.routes?.[0]?.geometry?.coordinates?.length) return [];
-  return data.routes[0].geometry.coordinates.map(([lng, lat]) => [lat, lng] as [number, number]);
+  if (data.code !== 'Ok' || !data.routes?.[0]?.geometry?.coordinates?.length) {
+    return { latLngs: [], steps: [], distanceMeters: null };
+  }
+  const route = data.routes[0];
+  const coords = route.geometry?.coordinates ?? [];
+  const latLngs = coords.map(([lng, lat]) => [lat, lng] as [number, number]);
+  const steps =
+    route.legs?.[0]?.steps?.map((step, index) => {
+      const road = step.name?.trim() ? `Đi theo ${step.name.trim()}` : 'Tiếp tục đi thẳng';
+      const d = step.distance ? ` (${Math.round(step.distance)} m)` : '';
+      return `${index + 1}. ${road}${d}`;
+    }) ?? [];
+  return { latLngs, steps, distanceMeters: route.distance ?? null };
 }
 
 function loadGoogleMapsJs(apiKey: string): Promise<void> {
@@ -841,7 +866,7 @@ async function fetchGoogleWalkingPolyline(
   apiKey: string,
   origin: { lat: number; lng: number },
   dest: { lat: number; lng: number }
-): Promise<[number, number][]> {
+): Promise<{ latLngs: [number, number][]; steps: string[]; distanceMeters: number | null }> {
   await loadGoogleMapsJs(apiKey);
   const maps = (window as unknown as { google: { maps: any } }).google.maps;
   const svc = new maps.DirectionsService();
@@ -852,12 +877,35 @@ async function fetchGoogleWalkingPolyline(
         destination: { lat: dest.lat, lng: dest.lng },
         travelMode: maps.TravelMode.WALKING
       },
-      (result: { routes: Array<{ overview_path: Array<{ lat(): number; lng(): number }> }> } | null, status: string) => {
+      (
+        result: {
+          routes: Array<{
+            overview_path: Array<{ lat(): number; lng(): number }>;
+            legs?: Array<{
+              distance?: { value?: number };
+              steps?: Array<{ html_instructions?: string; distance?: { text?: string } }>;
+            }>;
+          }>;
+        } | null,
+        status: string
+      ) => {
         if (status !== 'OK' || !result?.routes?.[0]?.overview_path?.length) {
           reject(new Error(status));
           return;
         }
-        resolve(result.routes[0].overview_path.map((p) => [p.lat(), p.lng()] as [number, number]));
+        const route = result.routes[0];
+        const stripHtml = (html: string) => html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+        const steps =
+          route.legs?.[0]?.steps?.map((step, index) => {
+            const text = stripHtml(step.html_instructions ?? '');
+            const d = step.distance?.text ? ` (${step.distance.text})` : '';
+            return `${index + 1}. ${text}${d}`.trim();
+          }) ?? [];
+        resolve({
+          latLngs: route.overview_path.map((p) => [p.lat(), p.lng()] as [number, number]),
+          steps,
+          distanceMeters: route.legs?.[0]?.distance?.value ?? null
+        });
       }
     );
   });
@@ -1031,6 +1079,7 @@ function App() {
     'idle' | 'loading' | 'success' | 'denied' | 'unavailable' | 'timeout' | 'insecure'
   >('idle');
   const [streetRouteLatLngs, setStreetRouteLatLngs] = useState<[number, number][]>([]);
+  const [streetRouteSteps, setStreetRouteSteps] = useState<string[]>([]);
   const [streetRouteStatus, setStreetRouteStatus] = useState<'idle' | 'loading' | 'ok' | 'error'>('idle');
   const [streetRouteProvider, setStreetRouteProvider] = useState<'google' | 'osrm' | null>(null);
   const [feedbackStatus, setFeedbackStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
@@ -1122,6 +1171,7 @@ function App() {
 
   useEffect(() => {
     setStreetRouteLatLngs([]);
+    setStreetRouteSteps([]);
     setStreetRouteStatus('idle');
     setStreetRouteProvider(null);
   }, [mapDestinationId, from]);
@@ -1210,25 +1260,31 @@ function App() {
     setStreetRouteStatus('loading');
     setStreetRouteProvider(null);
     try {
-      let pts: [number, number][] = [];
+      let routeResult: { latLngs: [number, number][]; steps: string[]; distanceMeters: number | null } = {
+        latLngs: [],
+        steps: [],
+        distanceMeters: null
+      };
       const dest = { lat: destNode.lat, lng: destNode.lng };
       if (GOOGLE_MAPS_WEB_API_KEY) {
         try {
-          pts = await fetchGoogleWalkingPolyline(GOOGLE_MAPS_WEB_API_KEY, origin, dest);
+          routeResult = await fetchGoogleWalkingPolyline(GOOGLE_MAPS_WEB_API_KEY, origin, dest);
           setStreetRouteProvider('google');
         } catch {
-          pts = await fetchOsrmWalkingPolyline(origin, dest);
+          routeResult = await fetchOsrmWalkingPolyline(origin, dest);
           setStreetRouteProvider('osrm');
         }
       } else {
-        pts = await fetchOsrmWalkingPolyline(origin, dest);
+        routeResult = await fetchOsrmWalkingPolyline(origin, dest);
         setStreetRouteProvider('osrm');
       }
-      if (pts.length < 2) throw new Error('short');
-      setStreetRouteLatLngs(pts);
+      if (routeResult.latLngs.length < 2) throw new Error('short');
+      setStreetRouteLatLngs(routeResult.latLngs);
+      setStreetRouteSteps(routeResult.steps);
       setStreetRouteStatus('ok');
     } catch {
       setStreetRouteLatLngs([]);
+      setStreetRouteSteps([]);
       setStreetRouteProvider(null);
       setStreetRouteStatus('error');
     }
@@ -1236,6 +1292,7 @@ function App() {
 
   const clearStreetWalkingRoute = useCallback(() => {
     setStreetRouteLatLngs([]);
+    setStreetRouteSteps([]);
     setStreetRouteStatus('idle');
     setStreetRouteProvider(null);
   }, []);
@@ -1813,9 +1870,6 @@ export const mockCommunityFeedbacks: CommunityFeedback[] = ${JSON.stringify(comm
                     {mapDestinationId && from === mapDestinationId && (
                       <p className="mapGeoMsg mapGeoErr">{t.mapSameStartEnd}</p>
                     )}
-                    {mapDestinationId && !route && from !== mapDestinationId && (
-                      <p className="mapGeoMsg mapGeoErr">{t.noRoute}</p>
-                    )}
                   </>
                 )}
               </div>
@@ -1879,9 +1933,7 @@ export const mockCommunityFeedbacks: CommunityFeedback[] = ${JSON.stringify(comm
                     ))}
                   </div>
                 </>
-              ) : (
-                <p>{t.noRoute}</p>
-              )}
+              ) : null}
               {mapDestinationId && (
                 <div className="mapStreetRouteRow">
                   <div className="mapStreetRouteBtns">
@@ -1903,7 +1955,20 @@ export const mockCommunityFeedbacks: CommunityFeedback[] = ${JSON.stringify(comm
                     <p className="mapGeoMsg mapGeoNeutral">{t.mapStreetRouteLoading}</p>
                   )}
                   {streetRouteStatus === 'error' && <p className="mapGeoMsg mapGeoErr">{t.mapStreetRouteError}</p>}
-                  <p className="mapStreetRouteHint">{t.mapStreetRouteHint}</p>
+                  {streetRouteStatus === 'ok' && (
+                    <>
+                      <p className="mapStreetStepsTitle">{t.mapStreetStepsTitle}</p>
+                      {streetRouteSteps.length > 0 ? (
+                        <ol className="mapStreetStepsList">
+                          {streetRouteSteps.map((step, idx) => (
+                            <li key={`street-step-${idx}`}>{step}</li>
+                          ))}
+                        </ol>
+                      ) : (
+                        <p className="mapGeoMsg mapGeoNeutral">{t.mapStreetStepsEmpty}</p>
+                      )}
+                    </>
+                  )}
                 </div>
               )}
             </section>

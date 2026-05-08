@@ -808,6 +808,26 @@
   color: var(--muted);
 }
 
+.mapStreetStepsTitle {
+  margin: 2px 0 0;
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.mapStreetStepsList {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 6px;
+}
+
+.mapStreetStepsList li {
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: var(--text);
+}
+
 .app.dark .mapLegendBlue {
   color: #60a5fa;
 }
