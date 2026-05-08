@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import L from 'leaflet';
 import { CircleMarker, MapContainer, Polyline, Popup, TileLayer, Tooltip, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -32,6 +32,8 @@ const MEMBER_AVATAR_FALLBACKS = [
 ];
 const INTRO_VIDEO_EMBED_URL = 'https://www.youtube.com/embed/DSNvqbEhwHk?rel=0';
 const FEEDBACK_STORAGE_KEY = 'vnu-map-community-feedback-v3';
+/** Google Maps JavaScript API key (Directions). Optional — without it, OSRM demo is used. */
+const GOOGLE_MAPS_WEB_API_KEY = (process.env.REACT_APP_GOOGLE_MAPS_API_KEY ?? '').trim();
 const LANGUAGE_OPTIONS: Array<{ value: Language; label: string; icon: string }> = [
   { value: 'vi', label: 'Tiếng Việt', icon: 'https://flagcdn.com/w40/vn.png' },
   { value: 'en', label: 'English', icon: 'https://flagcdn.com/w40/gb.png' },
@@ -90,7 +92,7 @@ const TEXT = {
     suggestionTitle: 'Gợi ý theo từ khóa',
     noRoute: 'Không tìm thấy đường đi phù hợp.',
     mapPanelIntro:
-      'Bấm GPS để cập nhật vị trí hiện tại (tọa độ + điểm xuất phát trên đồ thị). Sau đó chọn đích bằng ô tìm kiếm (gợi ý / Enter), danh sách hoặc bấm điểm trên bản đồ. Đường đi ngắn nhất được vẽ và liệt kê các chặng.',
+      'Bấm GPS để lấy vị trí (snap điểm xuất phát trên đồ thị). Chọn điểm đến để xem lộ trình — mỗi lần GPS cập nhật, đường đi được tính lại trên bản đồ và trong Chi tiết lộ trình.',
     mapClearDestination: 'Xóa điểm đến',
     mapSwapEnds: 'Đổi chiều đi–đến',
     mapSameStartEnd: 'Điểm xuất phát và đích trùng nhau — hãy đổi một trong hai.',
@@ -107,16 +109,20 @@ const TEXT = {
     mapYouAreHere: 'Bạn đang ở đây (GPS)',
     mapInternalRouteFrom: 'Đường nội bộ xuất phát từ:',
     mapLocationNoGpsHint: 'Bấm nút GPS phía trên để hiển thị tọa độ thật của bạn.',
-    mapArOpen: 'Chỉ đường qua camera',
-    mapArClose: 'Đóng camera',
-    mapArHint:
-      'Mở camera sau và la bàn: mũi tên chỉ hướng tới đích (độ chính xác tùy máy; trong nhà thường kém).',
-    mapArCameraDenied: 'Không mở được camera — kiểm tra quyền trình duyệt.',
-    mapArOrientDenied: 'Cần cho phép cảm biến hướng / la bàn để mũi tên chỉ đúng.',
-    mapArNoHeading: 'Đang chờ la bàn… giữ điện thoại ngang và xoay nhẹ.',
-    mapArDistance: 'Ước lượng còn lại',
-    mapArDisclaimer:
-      'Chế độ web đơn giản, không phải AR thực như Google Maps Live View. Tránh dựa hoàn toàn vào mũi tên khi an toàn giao thông.',
+    coordsPrefixGps: 'Tọa độ (GPS)',
+    mapLocationGpsLive: 'Đang theo dõi và cập nhật vị trí qua GPS khi bạn ở trang Thao tác bản đồ.',
+    mapGeoRouteLineA: 'Đã căn GPS — lộ trình đến',
+    mapGeoRouteLineB: 'được làm mới trên bản đồ và trong ô Chi tiết lộ trình.',
+    mapGeoPickDestForRoute: 'Chọn điểm đến để hiển thị lộ trình nội bộ.',
+    mapStreetRouteBtn: 'Đường đi thực tế (đường phố)',
+    mapStreetRouteClear: 'Ẩn đường phố',
+    mapStreetRouteLoading: 'Đang lấy đường đi…',
+    mapStreetRouteOkGoogle: 'Đường đi bộ — Google Maps',
+    mapStreetRouteOkOsrm: 'Đường đi bộ — OSRM (OpenStreetMap)',
+    mapStreetRouteError: 'Không lấy được đường đi ngoài phố. Thử lại.',
+    mapStreetRouteHint:
+      'Đặt REACT_APP_GOOGLE_MAPS_API_KEY trong .env để ưu tiên Google; không có key thì dùng OSRM (máy demo, có giới hạn).',
+    mapStreetRouteLegendDuo: 'Cam: đường phố · Xanh: lộ trình nội bộ ULIS',
     mapTitle: 'Bản đồ khuôn viên',
     mapSub: 'Nền vệ tinh + popup thông tin.',
     mapLayerLabel: 'Kiểu bản đồ',
@@ -228,7 +234,7 @@ const TEXT = {
     suggestionTitle: 'Suggestions',
     noRoute: 'No suitable route found.',
     mapPanelIntro:
-      'Use GPS to update your position (coordinates + graph start). Then pick a destination via search (suggestions / Enter), the destination list, or the map. The shortest path is drawn with step notes.',
+      'Use GPS for your position (graph start snaps nearby). Pick a destination to see the route — each GPS refresh recomputes the path on the map and in Route details.',
     mapClearDestination: 'Clear destination',
     mapSwapEnds: 'Swap start / destination',
     mapSameStartEnd: 'Start and destination are the same — change one of them.',
@@ -245,15 +251,19 @@ const TEXT = {
     mapYouAreHere: 'You are here (GPS)',
     mapInternalRouteFrom: 'Indoor route starts from:',
     mapLocationNoGpsHint: 'Use the GPS button above to show your real coordinates.',
-    mapArOpen: 'Camera directions',
-    mapArClose: 'Close',
-    mapArHint: 'Uses rear camera + compass; arrow points toward the destination (often weak indoors).',
-    mapArCameraDenied: 'Camera permission denied.',
-    mapArOrientDenied: 'Motion/orientation permission is required for the arrow.',
-    mapArNoHeading: 'Waiting for compass… hold the phone flat.',
-    mapArDistance: 'Approx. distance',
-    mapArDisclaimer:
-      'Simple web mode, not full AR like Live View. Do not rely on it alone for safety-critical navigation.',
+    coordsPrefixGps: 'GPS coordinates',
+    mapLocationGpsLive: 'Position is tracked and updated from GPS while you are on the map page.',
+    mapGeoRouteLineA: 'GPS locked — route to',
+    mapGeoRouteLineB: 'refreshed on the map and in Route details.',
+    mapGeoPickDestForRoute: 'Pick a destination to show the indoor route.',
+    mapStreetRouteBtn: 'Street walking route',
+    mapStreetRouteClear: 'Hide street route',
+    mapStreetRouteLoading: 'Fetching walking directions…',
+    mapStreetRouteOkGoogle: 'Walking — Google Maps',
+    mapStreetRouteOkOsrm: 'Walking — OSRM (OpenStreetMap)',
+    mapStreetRouteError: 'Could not load a street route. Try again.',
+    mapStreetRouteHint: 'Set REACT_APP_GOOGLE_MAPS_API_KEY in .env for Google; otherwise OSRM demo (rate limits).',
+    mapStreetRouteLegendDuo: 'Orange: street · Blue: ULIS indoor graph',
     mapTitle: 'Campus map',
     mapSub: 'Satellite view + location popup.',
     mapLayerLabel: 'Map style',
@@ -365,7 +375,7 @@ const TEXT = {
     suggestionTitle: '关键词建议',
     noRoute: '未找到合适路线。',
     mapPanelIntro:
-      '使用 GPS 更新当前位置（坐标与图上出发点），再通过搜索、目的地列表或地图选终点，系统绘制最短路线并列出步骤。',
+      '使用 GPS 获取位置（出发点就近对齐）。选择目的地即可查看路线 — 每次 GPS 更新都会重算地图与下方路线详情。',
     mapClearDestination: '清除目的地',
     mapSwapEnds: '交换起点 / 终点',
     mapSameStartEnd: '起点与终点相同，请修改其中一个。',
@@ -382,14 +392,19 @@ const TEXT = {
     mapYouAreHere: '当前位置 (GPS)',
     mapInternalRouteFrom: '室内路线出发点：',
     mapLocationNoGpsHint: '点击上方 GPS 按钮显示您的真实坐标。',
-    mapArOpen: '摄像头指路',
-    mapArClose: '关闭',
-    mapArHint: '使用后置摄像头与指南针；箭头指向目的地（室内可能不准）。',
-    mapArCameraDenied: '无法打开摄像头。',
-    mapArOrientDenied: '需要授权设备方向传感器。',
-    mapArNoHeading: '等待指南针… 请将手机放平。',
-    mapArDistance: '大致剩余距离',
-    mapArDisclaimer: '网页简化模式，非完整 AR。请勿完全依赖箭头判断路况。',
+    coordsPrefixGps: 'GPS 坐标',
+    mapLocationGpsLive: '在地图页面会通过 GPS 持续更新您的位置。',
+    mapGeoRouteLineA: 'GPS 已更新 — 至',
+    mapGeoRouteLineB: '的路线已在地图与路线详情中刷新。',
+    mapGeoPickDestForRoute: '请选择目的地以显示室内路线。',
+    mapStreetRouteBtn: '显示沿路步行路线',
+    mapStreetRouteClear: '隐藏沿路路线',
+    mapStreetRouteLoading: '正在获取路线…',
+    mapStreetRouteOkGoogle: '步行 — Google Maps',
+    mapStreetRouteOkOsrm: '步行 — OSRM（OpenStreetMap）',
+    mapStreetRouteError: '无法获取沿路路线。',
+    mapStreetRouteHint: '在 .env 设置 REACT_APP_GOOGLE_MAPS_API_KEY 优先使用 Google；否则使用 OSRM 演示服务。',
+    mapStreetRouteLegendDuo: '橙：沿路 · 蓝：校内 ULIS 路线',
     mapTitle: '校园地图',
     mapSub: '标准底图 + 地点弹窗。',
     mapLayerLabel: '地图样式',
@@ -501,7 +516,7 @@ const TEXT = {
     suggestionTitle: '추천 검색어',
     noRoute: '적절한 경로를 찾을 수 없습니다.',
     mapPanelIntro:
-      'GPS로 현재 위치를 갱신한 뒤(좌표·그래프 출발점), 검색·목록·지도로 목적지를 고르면 최단 경로가 표시됩니다.',
+      'GPS로 위치를 받습니다(출발 노드 스냅). 목적지를 고르면 경로가 표시되며, GPS가 갱신될 때마다 지도와 경로 상세가 다시 계산됩니다.',
     mapClearDestination: '목적지 지우기',
     mapSwapEnds: '출발·도착 바꾸기',
     mapSameStartEnd: '출발과 도착이 같습니다. 하나를 바꿔 주세요.',
@@ -518,14 +533,19 @@ const TEXT = {
     mapYouAreHere: '현재 위치 (GPS)',
     mapInternalRouteFrom: '실내 경로 출발:',
     mapLocationNoGpsHint: '위의 GPS 버튼으로 실제 좌표를 표시하세요.',
-    mapArOpen: '카메라 길안내',
-    mapArClose: '닫기',
-    mapArHint: '후면 카메라와 나침반 사용. 실내에서는 부정확할 수 있습니다.',
-    mapArCameraDenied: '카메라를 열 수 없습니다.',
-    mapArOrientDenied: '방향 센서 권한이 필요합니다.',
-    mapArNoHeading: '나침반 대기 중…',
-    mapArDistance: '예상 거리',
-    mapArDisclaimer: '웹 간이 모드입니다. 안전 판단에만 의존하지 마세요.',
+    coordsPrefixGps: 'GPS 좌표',
+    mapLocationGpsLive: '지도 페이지에 있는 동안 GPS로 위치를 계속 갱신합니다.',
+    mapGeoRouteLineA: 'GPS 반영 — 목적지',
+    mapGeoRouteLineB: '까지 경로가 지도와 상세에 다시 계산되었습니다.',
+    mapGeoPickDestForRoute: '목적지를 선택하면 실내 경로가 표시됩니다.',
+    mapStreetRouteBtn: '실제 도보 경로',
+    mapStreetRouteClear: '도로 경로 숨기기',
+    mapStreetRouteLoading: '경로 불러오는 중…',
+    mapStreetRouteOkGoogle: '도보 — Google Maps',
+    mapStreetRouteOkOsrm: '도보 — OSRM(OpenStreetMap)',
+    mapStreetRouteError: '도로 경로를 가져올 수 없습니다.',
+    mapStreetRouteHint: '.env에 REACT_APP_GOOGLE_MAPS_API_KEY 설정 시 Google 우선, 없으면 OSRM 데모.',
+    mapStreetRouteLegendDuo: '주황: 도로 · 파랑: ULIS 실내',
     mapTitle: '캠퍼스 지도',
     mapSub: '기본 지도 + 위치 팝업.',
     mapLayerLabel: '지도 스타일',
@@ -637,7 +657,7 @@ const TEXT = {
     suggestionTitle: '候補',
     noRoute: '適切なルートが見つかりません。',
     mapPanelIntro:
-      'GPS で現在地を更新し（座標・グラフ上の出発点）、検索・一覧・地図で目的地を選ぶと最短経路が表示されます。',
+      'GPS で位置を取得します（出発ノードを近傍にスナップ）。目的地を選ぶと経路が表示され、GPS が更新されるたびに地図と詳細が再計算されます。',
     mapClearDestination: '目的地をクリア',
     mapSwapEnds: '出発/目的地を入れ替え',
     mapSameStartEnd: '出発と目的地が同じです。どちらかを変更してください。',
@@ -654,14 +674,19 @@ const TEXT = {
     mapYouAreHere: '現在地 (GPS)',
     mapInternalRouteFrom: '屋内経路の出発点：',
     mapLocationNoGpsHint: '上の GPS ボタンで実座標を表示できます。',
-    mapArOpen: 'カメラで案内',
-    mapArClose: '閉じる',
-    mapArHint: '背面カメラとコンパスを使用。屋内では誤差が大きいことがあります。',
-    mapArCameraDenied: 'カメラを開けませんでした。',
-    mapArOrientDenied: 'デバイスの向きの許可が必要です。',
-    mapArNoHeading: 'コンパス待ち…',
-    mapArDistance: 'およその残り距離',
-    mapArDisclaimer: '簡易ウェブ表示であり完全な AR ではありません。',
+    coordsPrefixGps: 'GPS 座標',
+    mapLocationGpsLive: 'マップページでは GPS により位置を継続的に更新します。',
+    mapGeoRouteLineA: 'GPS を反映 — 目的地',
+    mapGeoRouteLineB: 'までの経路を地図と詳細で更新しました。',
+    mapGeoPickDestForRoute: '目的地を選ぶと屋内経路が表示されます。',
+    mapStreetRouteBtn: '実際の道を歩く経路',
+    mapStreetRouteClear: '道沿いを非表示',
+    mapStreetRouteLoading: '経路を取得中…',
+    mapStreetRouteOkGoogle: '徒歩 — Google Maps',
+    mapStreetRouteOkOsrm: '徒歩 — OSRM（OpenStreetMap）',
+    mapStreetRouteError: '道沿い経路を取得できませんでした。',
+    mapStreetRouteHint: '.env に REACT_APP_GOOGLE_MAPS_API_KEY があれば Google 優先、なければ OSRM デモ。',
+    mapStreetRouteLegendDuo: '橙：道沿い · 青：ULIS 屋内',
     mapTitle: 'キャンパスマップ',
     mapSub: '標準地図 + ポップアップ情報。',
     mapLayerLabel: '地図スタイル',
@@ -769,26 +794,73 @@ function haversineMeters(a: { lat: number; lng: number }, b: { lat: number; lng:
   return 2 * R * Math.asin(Math.min(1, Math.sqrt(h)));
 }
 
-/** Bearing from (lat1,lng1) to (lat2,lng2), degrees clockwise from north, in [0,360). */
-function bearingDegrees(lat1: number, lng1: number, lat2: number, lng2: number) {
-  const φ1 = (lat1 * Math.PI) / 180;
-  const φ2 = (lat2 * Math.PI) / 180;
-  const Δλ = ((lng2 - lng1) * Math.PI) / 180;
-  const y = Math.sin(Δλ) * Math.cos(φ2);
-  const x = Math.cos(φ1) * Math.sin(φ2) - Math.sin(φ1) * Math.cos(φ2) * Math.cos(Δλ);
-  const θ = Math.atan2(y, x);
-  return ((θ * 180) / Math.PI + 360) % 360;
+async function fetchOsrmWalkingPolyline(
+  origin: { lat: number; lng: number },
+  dest: { lat: number; lng: number }
+): Promise<[number, number][]> {
+  const url = `https://router.project-osrm.org/route/v1/foot/${origin.lng},${origin.lat};${dest.lng},${dest.lat}?overview=full&geometries=geojson`;
+  const res = await fetch(url);
+  const data = (await res.json()) as {
+    code?: string;
+    routes?: Array<{ geometry?: { coordinates?: [number, number][] } }>;
+  };
+  if (data.code !== 'Ok' || !data.routes?.[0]?.geometry?.coordinates?.length) return [];
+  return data.routes[0].geometry.coordinates.map(([lng, lat]) => [lat, lng] as [number, number]);
 }
 
-function headingFromDeviceOrientation(event: DeviceOrientationEvent): number | null {
-  const e = event as DeviceOrientationEvent & { webkitCompassHeading?: number };
-  if (typeof e.webkitCompassHeading === 'number' && !Number.isNaN(e.webkitCompassHeading)) {
-    return e.webkitCompassHeading;
+function loadGoogleMapsJs(apiKey: string): Promise<void> {
+  if (typeof window === 'undefined') return Promise.reject(new Error('no-window'));
+  type MapsWin = { google?: { maps?: { DirectionsService?: new () => unknown } } };
+  const w = window as unknown as MapsWin;
+  if (w.google?.maps?.DirectionsService) return Promise.resolve();
+  if (document.getElementById('google-maps-js-api')) {
+    return new Promise((resolve, reject) => {
+      const deadline = Date.now() + 25000;
+      const poll = () => {
+        const ww = window as unknown as MapsWin;
+        if (ww.google?.maps?.DirectionsService) resolve();
+        else if (Date.now() > deadline) reject(new Error('Google Maps API timeout'));
+        else window.setTimeout(poll, 80);
+      };
+      poll();
+    });
   }
-  if (event.absolute && event.alpha != null && !Number.isNaN(event.alpha)) {
-    return (360 - event.alpha + 360) % 360;
-  }
-  return null;
+  return new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.id = 'google-maps-js-api';
+    script.async = true;
+    script.defer = true;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(apiKey)}`;
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error('Google Maps script failed'));
+    document.head.appendChild(script);
+  });
+}
+
+async function fetchGoogleWalkingPolyline(
+  apiKey: string,
+  origin: { lat: number; lng: number },
+  dest: { lat: number; lng: number }
+): Promise<[number, number][]> {
+  await loadGoogleMapsJs(apiKey);
+  const maps = (window as unknown as { google: { maps: any } }).google.maps;
+  const svc = new maps.DirectionsService();
+  return new Promise((resolve, reject) => {
+    svc.route(
+      {
+        origin: { lat: origin.lat, lng: origin.lng },
+        destination: { lat: dest.lat, lng: dest.lng },
+        travelMode: maps.TravelMode.WALKING
+      },
+      (result: { routes: Array<{ overview_path: Array<{ lat(): number; lng(): number }> }> } | null, status: string) => {
+        if (status !== 'OK' || !result?.routes?.[0]?.overview_path?.length) {
+          reject(new Error(status));
+          return;
+        }
+        resolve(result.routes[0].overview_path.map((p) => [p.lat(), p.lng()] as [number, number]));
+      }
+    );
+  });
 }
 
 function getTypeLabel(type: string, language: Language) {
@@ -958,12 +1030,9 @@ function App() {
   const [geoUiStatus, setGeoUiStatus] = useState<
     'idle' | 'loading' | 'success' | 'denied' | 'unavailable' | 'timeout' | 'insecure'
   >('idle');
-  const [arCameraOpen, setArCameraOpen] = useState(false);
-  const [arHeadingDeg, setArHeadingDeg] = useState<number | null>(null);
-  const [arLivePosition, setArLivePosition] = useState<{ lat: number; lng: number } | null>(null);
-  const [arCameraErrorKey, setArCameraErrorKey] = useState<'cameraDenied' | 'orientDenied' | 'insecure' | null>(null);
-  const arVideoRef = useRef<HTMLVideoElement>(null);
-  const arStreamRef = useRef<MediaStream | null>(null);
+  const [streetRouteLatLngs, setStreetRouteLatLngs] = useState<[number, number][]>([]);
+  const [streetRouteStatus, setStreetRouteStatus] = useState<'idle' | 'loading' | 'ok' | 'error'>('idle');
+  const [streetRouteProvider, setStreetRouteProvider] = useState<'google' | 'osrm' | null>(null);
   const [feedbackStatus, setFeedbackStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
   const [importStatus, setImportStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [from, setFrom] = useState('gate-main');
@@ -1016,98 +1085,6 @@ function App() {
     );
   }, []);
 
-  const closeArCamera = useCallback(() => {
-    arStreamRef.current?.getTracks().forEach((track) => track.stop());
-    arStreamRef.current = null;
-    const video = arVideoRef.current;
-    if (video) video.srcObject = null;
-    setArCameraOpen(false);
-    setArHeadingDeg(null);
-    setArLivePosition(null);
-  }, []);
-
-  const openArCamera = useCallback(async () => {
-    const dest = mapDestinationId ? nodeById.get(mapDestinationId) : undefined;
-    if (!dest) return;
-    setArCameraErrorKey(null);
-    if (typeof window !== 'undefined' && !window.isSecureContext) {
-      setArCameraErrorKey('insecure');
-      return;
-    }
-    try {
-      const orientationCtor = DeviceOrientationEvent as unknown as {
-        requestPermission?: () => Promise<'granted' | 'denied'>;
-      };
-      if (typeof orientationCtor.requestPermission === 'function') {
-        const perm = await orientationCtor.requestPermission();
-        if (perm !== 'granted') {
-          setArCameraErrorKey('orientDenied');
-          return;
-        }
-      }
-      if (!navigator.mediaDevices?.getUserMedia) {
-        setArCameraErrorKey('cameraDenied');
-        return;
-      }
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: 'environment' } },
-        audio: false
-      });
-      arStreamRef.current = stream;
-      setArLivePosition(userGeoPosition);
-      setArCameraOpen(true);
-    } catch {
-      setArCameraErrorKey('cameraDenied');
-    }
-  }, [mapDestinationId, nodeById, userGeoPosition]);
-
-  useEffect(() => {
-    if (routeState.view !== 'map' && arCameraOpen) closeArCamera();
-  }, [routeState.view, arCameraOpen, closeArCamera]);
-
-  useEffect(() => {
-    if (arCameraOpen && !mapDestinationId) closeArCamera();
-  }, [arCameraOpen, mapDestinationId, closeArCamera]);
-
-  useEffect(() => {
-    setArCameraErrorKey(null);
-  }, [mapDestinationId]);
-
-  useEffect(() => {
-    if (!arCameraOpen) return;
-    const video = arVideoRef.current;
-    const stream = arStreamRef.current;
-    if (video && stream) {
-      video.srcObject = stream;
-      void video.play().catch(() => {});
-    }
-  }, [arCameraOpen]);
-
-  useEffect(() => {
-    if (!arCameraOpen) return;
-    const onOrient = (event: DeviceOrientationEvent) => {
-      const h = headingFromDeviceOrientation(event);
-      if (h != null) setArHeadingDeg(h);
-    };
-    window.addEventListener('deviceorientation', onOrient, true);
-    return () => window.removeEventListener('deviceorientation', onOrient, true);
-  }, [arCameraOpen]);
-
-  useEffect(() => {
-    if (!arCameraOpen || !navigator.geolocation) return;
-    const watchId = navigator.geolocation.watchPosition(
-      (position) => {
-        setArLivePosition({
-          lat: position.coords.latitude,
-          lng: position.coords.longitude
-        });
-      },
-      () => {},
-      { enableHighAccuracy: true, maximumAge: 2500 }
-    );
-    return () => navigator.geolocation.clearWatch(watchId);
-  }, [arCameraOpen]);
-
   const routeStartCandidates = useMemo(
     () => nodes.filter((node) => node.type === 'gate' || node.type === 'campus' || node.type === 'hub'),
     [nodes]
@@ -1126,6 +1103,28 @@ function App() {
     }
     setFrom(bestId);
   }, [userGeoPosition, routeStartCandidates]);
+
+  const hasGeoFix = userGeoPosition != null;
+  useEffect(() => {
+    if (routeState.view !== 'map' || !hasGeoFix || !navigator.geolocation) return;
+    const watchId = navigator.geolocation.watchPosition(
+      (position) => {
+        setUserGeoPosition({
+          lat: position.coords.latitude,
+          lng: position.coords.longitude
+        });
+      },
+      () => {},
+      { enableHighAccuracy: true, maximumAge: 4000 }
+    );
+    return () => navigator.geolocation.clearWatch(watchId);
+  }, [routeState.view, hasGeoFix]);
+
+  useEffect(() => {
+    setStreetRouteLatLngs([]);
+    setStreetRouteStatus('idle');
+    setStreetRouteProvider(null);
+  }, [mapDestinationId, from]);
 
   const mapSuggestions = useMemo(() => {
     const keyword = normalize(mapSearchDraft);
@@ -1173,6 +1172,18 @@ function App() {
     return coords;
   }, [route, nodeById]);
   const routeBoundsKey = route?.path.join('|') ?? '';
+  const mapFitLatLngs = useMemo(() => {
+    const pts: [number, number][] = [];
+    if (routeLatLngs.length >= 2) pts.push(...routeLatLngs);
+    if (streetRouteLatLngs.length >= 2) pts.push(...streetRouteLatLngs);
+    return pts;
+  }, [routeLatLngs, streetRouteLatLngs]);
+  const mapFitBoundsKey = useMemo(() => {
+    if (mapFitLatLngs.length < 2) return '';
+    const sr = streetRouteLatLngs;
+    const srSig = sr.length >= 2 ? `${sr.length}:${sr[0][0]},${sr[0][1]}` : '0';
+    return `${routeBoundsKey}|sr:${srSig}`;
+  }, [mapFitLatLngs.length, routeBoundsKey, streetRouteLatLngs]);
   const routeSegments = useMemo(() => {
     if (!route) return [];
     const list: string[] = [];
@@ -1185,20 +1196,49 @@ function App() {
     return list;
   }, [route]);
   const activeNode = nodeById.get(activeId);
-  const arPositionForArrow = arLivePosition ?? userGeoPosition;
-  const arOverlayMetrics = useMemo(() => {
-    const dest = mapDestinationId ? nodeById.get(mapDestinationId) : undefined;
-    if (!dest || !arPositionForArrow) return { bearing: null as number | null, dist: null as number | null };
-    return {
-      bearing: bearingDegrees(arPositionForArrow.lat, arPositionForArrow.lng, dest.lat, dest.lng),
-      dist: haversineMeters(arPositionForArrow, { lat: dest.lat, lng: dest.lng })
-    };
-  }, [mapDestinationId, nodeById, arPositionForArrow]);
-  const arArrowRotateDeg =
-    arOverlayMetrics.bearing != null && arHeadingDeg != null
-      ? ((arOverlayMetrics.bearing - arHeadingDeg + 540) % 360) - 180
-      : 0;
   const fromNode = nodeById.get(from);
+
+  const fetchStreetWalkingRoute = useCallback(async () => {
+    const destNode = mapDestinationId ? nodeById.get(mapDestinationId) : undefined;
+    const startNode = nodeById.get(from);
+    const origin =
+      userGeoPosition ?? (startNode ? { lat: startNode.lat, lng: startNode.lng } : null);
+    if (!destNode || !origin) {
+      setStreetRouteStatus('error');
+      return;
+    }
+    setStreetRouteStatus('loading');
+    setStreetRouteProvider(null);
+    try {
+      let pts: [number, number][] = [];
+      const dest = { lat: destNode.lat, lng: destNode.lng };
+      if (GOOGLE_MAPS_WEB_API_KEY) {
+        try {
+          pts = await fetchGoogleWalkingPolyline(GOOGLE_MAPS_WEB_API_KEY, origin, dest);
+          setStreetRouteProvider('google');
+        } catch {
+          pts = await fetchOsrmWalkingPolyline(origin, dest);
+          setStreetRouteProvider('osrm');
+        }
+      } else {
+        pts = await fetchOsrmWalkingPolyline(origin, dest);
+        setStreetRouteProvider('osrm');
+      }
+      if (pts.length < 2) throw new Error('short');
+      setStreetRouteLatLngs(pts);
+      setStreetRouteStatus('ok');
+    } catch {
+      setStreetRouteLatLngs([]);
+      setStreetRouteProvider(null);
+      setStreetRouteStatus('error');
+    }
+  }, [mapDestinationId, nodeById, userGeoPosition, from]);
+
+  const clearStreetWalkingRoute = useCallback(() => {
+    setStreetRouteLatLngs([]);
+    setStreetRouteStatus('idle');
+    setStreetRouteProvider(null);
+  }, []);
   const detailNode = nodeById.get(routeState.detailId);
   const routeView = routeState.view;
   const t = TEXT[language];
@@ -1685,7 +1725,6 @@ export const mockCommunityFeedbacks: CommunityFeedback[] = ${JSON.stringify(comm
       )}
 
       {routeView === 'map' && (
-        <>
         <main className="content">
           <aside className="panel">
             <section className="card searchCard">
@@ -1761,14 +1800,33 @@ export const mockCommunityFeedbacks: CommunityFeedback[] = ${JSON.stringify(comm
                     {geoUiStatus === 'insecure' && t.mapGeoInsecure}
                   </p>
                 )}
+                {geoUiStatus === 'success' && userGeoPosition && (
+                  <>
+                    {!mapDestinationId && <p className="mapGeoMsg mapGeoNeutral">{t.mapGeoPickDestForRoute}</p>}
+                    {mapDestinationId && route && from !== mapDestinationId && activeNode && (
+                      <p className="mapGeoMsg mapGeoOk">
+                        {t.mapGeoRouteLineA} <strong>{activeNode.label}</strong>
+                        {` (~${route.distance} m). `}
+                        {t.mapGeoRouteLineB}
+                      </p>
+                    )}
+                    {mapDestinationId && from === mapDestinationId && (
+                      <p className="mapGeoMsg mapGeoErr">{t.mapSameStartEnd}</p>
+                    )}
+                    {mapDestinationId && !route && from !== mapDestinationId && (
+                      <p className="mapGeoMsg mapGeoErr">{t.noRoute}</p>
+                    )}
+                  </>
+                )}
               </div>
               <div className="mapLocationReadout">
                 <div className="mapLocationLabel">{t.fromLabel}</div>
                 {userGeoPosition ? (
                   <>
                     <p className="mapLocationPrimary">
-                      {t.coordsPrefix}: {userGeoPosition.lat.toFixed(6)}, {userGeoPosition.lng.toFixed(6)}
+                      {t.coordsPrefixGps}: {userGeoPosition.lat.toFixed(6)}, {userGeoPosition.lng.toFixed(6)}
                     </p>
+                    <p className="mapLocationMeta">{t.mapLocationGpsLive}</p>
                     <p className="mapLocationMeta">
                       {t.mapInternalRouteFrom} <strong>{nodeById.get(from)?.label ?? '—'}</strong>
                     </p>
@@ -1798,21 +1856,6 @@ export const mockCommunityFeedbacks: CommunityFeedback[] = ${JSON.stringify(comm
                   </option>
                 ))}
               </select>
-              {mapDestinationId && activeNode && (
-                <div className="mapArRow">
-                  <button type="button" className="ghostBtn smallGhost mapArOpenBtn" onClick={() => void openArCamera()}>
-                    {t.mapArOpen}
-                  </button>
-                  <p className="mapArHint">{t.mapArHint}</p>
-                  {arCameraErrorKey && (
-                    <p className="mapGeoMsg mapGeoErr">
-                      {arCameraErrorKey === 'insecure' && t.mapGeoInsecure}
-                      {arCameraErrorKey === 'orientDenied' && t.mapArOrientDenied}
-                      {arCameraErrorKey === 'cameraDenied' && t.mapArCameraDenied}
-                    </p>
-                  )}
-                </div>
-              )}
             </section>
             <section className="routeBox card">
               <h2>{t.routeDetail}</h2>
@@ -1839,13 +1882,45 @@ export const mockCommunityFeedbacks: CommunityFeedback[] = ${JSON.stringify(comm
               ) : (
                 <p>{t.noRoute}</p>
               )}
+              {mapDestinationId && (
+                <div className="mapStreetRouteRow">
+                  <div className="mapStreetRouteBtns">
+                    <button
+                      type="button"
+                      className="ghostBtn smallGhost"
+                      onClick={() => void fetchStreetWalkingRoute()}
+                      disabled={streetRouteStatus === 'loading'}
+                    >
+                      {t.mapStreetRouteBtn}
+                    </button>
+                    {streetRouteLatLngs.length >= 2 && (
+                      <button type="button" className="ghostBtn smallGhost" onClick={clearStreetWalkingRoute}>
+                        {t.mapStreetRouteClear}
+                      </button>
+                    )}
+                  </div>
+                  {streetRouteStatus === 'loading' && (
+                    <p className="mapGeoMsg mapGeoNeutral">{t.mapStreetRouteLoading}</p>
+                  )}
+                  {streetRouteStatus === 'error' && <p className="mapGeoMsg mapGeoErr">{t.mapStreetRouteError}</p>}
+                  <p className="mapStreetRouteHint">{t.mapStreetRouteHint}</p>
+                </div>
+              )}
             </section>
           </aside>
           <section className="mapSection card">
             <div className="mapHeader">
               <div>
                 <h2>{t.mapTitle}</h2>
-                {routeLatLngs.length >= 2 && <p className="mapRouteLegend">{t.mapRouteLegend}</p>}
+                {routeLatLngs.length >= 2 && <p className="mapRouteLegend mapLegendBlue">{t.mapRouteLegend}</p>}
+                {streetRouteLatLngs.length >= 2 && (
+                  <p className="mapRouteLegend mapLegendOrange">
+                    {streetRouteProvider === 'google' ? t.mapStreetRouteOkGoogle : t.mapStreetRouteOkOsrm}
+                  </p>
+                )}
+                {routeLatLngs.length >= 2 && streetRouteLatLngs.length >= 2 && (
+                  <p className="mapRouteLegend mapLegendDuo">{t.mapStreetRouteLegendDuo}</p>
+                )}
               </div>
               <div className="mapHeaderControls">
                 <label htmlFor="map-layer">{t.mapLayerLabel}</label>
@@ -1907,7 +1982,20 @@ export const mockCommunityFeedbacks: CommunityFeedback[] = ${JSON.stringify(comm
                     }}
                   />
                 )}
-                <MapRouteBounds latLngs={routeLatLngs} boundsKey={routeBoundsKey} />
+                {streetRouteLatLngs.length >= 2 && (
+                  <Polyline
+                    positions={streetRouteLatLngs}
+                    pathOptions={{
+                      color: '#ea580c',
+                      weight: 5,
+                      opacity: 0.9,
+                      dashArray: '10 10',
+                      lineCap: 'round',
+                      lineJoin: 'round'
+                    }}
+                  />
+                )}
+                <MapRouteBounds latLngs={mapFitLatLngs} boundsKey={mapFitBoundsKey} />
                 <MapPanToUserLocation
                   lat={userGeoPosition?.lat ?? null}
                   lng={userGeoPosition?.lng ?? null}
@@ -1970,7 +2058,7 @@ export const mockCommunityFeedbacks: CommunityFeedback[] = ${JSON.stringify(comm
                       <div className="mapPopup">
                         <h3>{t.mapYouAreHere}</h3>
                         <p>
-                          {t.coordsPrefix}: {userGeoPosition.lat.toFixed(6)}, {userGeoPosition.lng.toFixed(6)}
+                          {t.coordsPrefixGps}: {userGeoPosition.lat.toFixed(6)}, {userGeoPosition.lng.toFixed(6)}
                         </p>
                         <a
                           href={`https://www.google.com/maps/search/?api=1&query=${userGeoPosition.lat},${userGeoPosition.lng}`}
@@ -1996,42 +2084,6 @@ export const mockCommunityFeedbacks: CommunityFeedback[] = ${JSON.stringify(comm
             </div>
           </section>
         </main>
-        {arCameraOpen && activeNode && (
-          <div className="arCameraOverlay" role="dialog" aria-modal="true" aria-label={t.mapArOpen}>
-            <video ref={arVideoRef} className="arCameraVideo" autoPlay playsInline muted />
-            <div className="arCameraHud">
-              <div className="arCameraTopBar">
-                <button type="button" className="arCameraCloseBtn" onClick={closeArCamera}>
-                  {t.mapArClose}
-                </button>
-              </div>
-              <div className="arArrowStage">
-                <div className="arArrowPivot" style={{ transform: `rotate(${arArrowRotateDeg}deg)` }} aria-hidden>
-                  <svg className="arArrowSvg" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
-                    <polygon
-                      points="60,12 108,96 12,96"
-                      fill="#fbbf24"
-                      stroke="#1e293b"
-                      strokeWidth="5"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                </div>
-                {arHeadingDeg == null && <p className="arHeadingWait">{t.mapArNoHeading}</p>}
-              </div>
-              <div className="arCameraFooter">
-                <strong className="arDestTitle">{activeNode.label}</strong>
-                {arOverlayMetrics.dist != null && (
-                  <p className="arDistLine">
-                    {t.mapArDistance}: ~{Math.round(arOverlayMetrics.dist)} m
-                  </p>
-                )}
-                <p className="arDisclaimer">{t.mapArDisclaimer}</p>
-              </div>
-            </div>
-          </div>
-        )}
-        </>
       )}
 
       {routeView === 'about' && (
