@@ -18,7 +18,7 @@ const TYPE_LABELS: Record<Language, Record<string, string>> = {
   ko: { campus: '캠퍼스', gate: '정문', hall: '강당', room: '강의실', hub: '허브' },
   ja: { campus: 'キャンパス', gate: '門', hall: 'ホール', room: '教室', hub: 'ハブ' }
 };
-const STORAGE_KEY = 'vnu-map-nodes-v4';
+const STORAGE_KEY = 'vnu-map-nodes-v5';
 const NAV_ITEMS: Array<{ key: 'landing' | 'map' | 'about' | 'feedback'; path: string }> = [
   { key: 'landing', path: '/' },
   { key: 'map', path: '/thao-tac-ban-do' },
@@ -1296,10 +1296,19 @@ function App() {
   const routeView = routeState.view;
   const t = TEXT[language];
   const currentLang = LANGUAGE_OPTIONS.find((item) => item.value === language) ?? LANGUAGE_OPTIONS[0];
-  const uniqueNodeTypes = useMemo(() => Array.from(new Set(nodes.map((node) => node.type))).filter(Boolean), [nodes]);
+  const isHiddenHomeNode = useCallback((nodeId: string) => {
+    const idNumber = Number(nodeId);
+    return Number.isFinite(idNumber) && idNumber >= 23 && idNumber <= 40;
+  }, []);
+  const uniqueNodeTypes = useMemo(
+    () =>
+      Array.from(new Set(nodes.filter((node) => !isHiddenHomeNode(node.id)).map((node) => node.type))).filter(Boolean),
+    [nodes, isHiddenHomeNode]
+  );
   const landingNodes = useMemo(() => {
     const keyword = normalize(landingQuery);
     return nodes.filter((node) => {
+      if (isHiddenHomeNode(node.id)) return false;
       const matchKeyword =
         !keyword ||
         normalize(node.label).includes(keyword) ||
@@ -1307,7 +1316,7 @@ function App() {
       const matchType = landingTypeFilter === 'all' || node.type === landingTypeFilter;
       return matchKeyword && matchType;
     });
-  }, [landingQuery, landingTypeFilter, nodes]);
+  }, [landingQuery, landingTypeFilter, nodes, isHiddenHomeNode]);
   React.useEffect(() => localStorage.setItem(STORAGE_KEY, JSON.stringify(nodes)), [nodes]);
   React.useEffect(() => localStorage.setItem(FEEDBACK_STORAGE_KEY, JSON.stringify(communityFeedbacks)), [communityFeedbacks]);
   React.useEffect(() => {
