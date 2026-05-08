@@ -18,7 +18,7 @@ const TYPE_LABELS: Record<Language, Record<string, string>> = {
   ko: { campus: '캠퍼스', gate: '정문', hall: '강당', room: '강의실', hub: '허브' },
   ja: { campus: 'キャンパス', gate: '門', hall: 'ホール', room: '教室', hub: 'ハブ' }
 };
-const STORAGE_KEY = 'vnu-map-nodes-v3';
+const STORAGE_KEY = 'vnu-map-nodes-v4';
 const NAV_ITEMS: Array<{ key: 'landing' | 'map' | 'about' | 'feedback'; path: string }> = [
   { key: 'landing', path: '/' },
   { key: 'map', path: '/thao-tac-ban-do' },
