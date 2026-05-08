@@ -1243,6 +1243,8 @@ select:focus {
 .adminPage {
   display: grid;
   gap: 12px;
+  animation: none;
+  transform: none;
 }
 
 .importDataPage {
@@ -1388,6 +1390,17 @@ select:focus {
   gap: 8px;
 }
 
+.adminField {
+  display: grid;
+  gap: 4px;
+}
+
+.adminField span {
+  font-size: 0.8rem;
+  color: var(--muted);
+  font-weight: 600;
+}
+
 .adminEditorActions {
   margin-top: 10px;
   display: flex;
@@ -1399,7 +1412,7 @@ select:focus {
   position: fixed;
   inset: 0;
   background: rgba(2, 8, 23, 0.5);
-  z-index: 2100;
+  z-index: 99999;
   display: flex;
   align-items: center;
   justify-content: center;

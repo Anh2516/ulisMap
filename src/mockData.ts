@@ -10,7 +10,6 @@ export type CampusNode = {
   descriptionEn: string;
   openingHour: string;
   closingHour: string;
-  rating: number;
   feedbacks: FeedbackItem[];
 };
 
@@ -30,7 +29,6 @@ export type TeamMember = {
 
 export type FeedbackItem = {
   user: string;
-  rating: number;
   comment: string;
   createdAt: string;
   avatar?: string;
@@ -601,7 +599,11 @@ const generatedData = {
   ]
 };
 
-export const mockNodes: CampusNode[] = generatedData.mockNodes as CampusNode[];
+export const mockNodes: CampusNode[] = (generatedData.mockNodes as Array<CampusNode & { rating?: number }>).map(
+  ({ rating: _rating, ...node }) => node
+);
 export const mockEdges: Edge[] = generatedData.mockEdges as Edge[];
 export const mockMembers: TeamMember[] = generatedData.mockMembers as TeamMember[];
-export const mockCommunityFeedbacks: CommunityFeedback[] = generatedData.mockCommunityFeedbacks as CommunityFeedback[];
+export const mockCommunityFeedbacks: CommunityFeedback[] = (
+  generatedData.mockCommunityFeedbacks as Array<CommunityFeedback & { rating?: number }>
+).map(({ rating: _rating, ...feedback }) => feedback);

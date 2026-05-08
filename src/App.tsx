@@ -688,7 +688,6 @@ function hydrateNode(rawNode: Partial<CampusNode>): CampusNode {
     ...rawNode,
     aliases: Array.isArray(rawNode.aliases) ? rawNode.aliases : fallback.aliases,
     feedbacks: Array.isArray(rawNode.feedbacks) ? rawNode.feedbacks : fallback.feedbacks,
-    rating: typeof rawNode.rating === 'number' ? rawNode.rating : fallback.rating,
     openingHour: typeof rawNode.openingHour === 'string' ? rawNode.openingHour : fallback.openingHour,
     closingHour: typeof rawNode.closingHour === 'string' ? rawNode.closingHour : fallback.closingHour,
     descriptionVi:
@@ -714,7 +713,6 @@ function hydrateCommunityFeedbacks(rawFeedbacks: unknown): CommunityFeedback[] {
     return {
       id: typeof feedback.id === 'string' && feedback.id ? feedback.id : `cf-${Date.now()}-${index}`,
       user: typeof feedback.user === 'string' ? feedback.user : fallback.user,
-      rating: typeof feedback.rating === 'number' ? feedback.rating : fallback.rating,
       comment: typeof feedback.comment === 'string' ? feedback.comment : fallback.comment,
       createdAt: typeof feedback.createdAt === 'string' ? feedback.createdAt : fallback.createdAt,
       avatar: typeof feedback.avatar === 'string' ? feedback.avatar : fallback.avatar
@@ -852,7 +850,6 @@ function App() {
       descriptionEn: 'New description.',
       openingHour: '07:00',
       closingHour: '18:00',
-      rating: 4,
       feedbacks: []
     };
   };
@@ -919,7 +916,6 @@ function App() {
   const createCommunityFeedbackDraft = () => ({
     id: `cf-${Date.now()}`,
     user: language === 'vi' ? 'Người dùng mới' : 'New user',
-    rating: 5,
     comment: '',
     createdAt: new Date().toISOString().slice(0, 10),
     avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=200&q=80'
@@ -954,17 +950,59 @@ function App() {
     }
   };
   const exportMockData = () => {
-    const payload = {
-      mockNodes: nodes,
-      mockEdges,
-      mockMembers: members,
-      mockCommunityFeedbacks: communityFeedbacks
-    };
-    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const fileContent = `export type CampusNode = {
+  id: string;
+  label: string;
+  type: string;
+  lat: number;
+  lng: number;
+  image: string;
+  aliases: string[];
+  descriptionVi: string;
+  descriptionEn: string;
+  openingHour: string;
+  closingHour: string;
+  feedbacks: FeedbackItem[];
+};
+
+export type Edge = {
+  from: string;
+  to: string;
+  distance: number;
+  note: string;
+};
+
+export type TeamMember = {
+  name: string;
+  role: string;
+  bio: string;
+  avatar: string;
+};
+
+export type FeedbackItem = {
+  user: string;
+  comment: string;
+  createdAt: string;
+  avatar?: string;
+};
+
+export type CommunityFeedback = FeedbackItem & {
+  id: string;
+};
+
+export const mockNodes: CampusNode[] = ${JSON.stringify(nodes, null, 2)};
+
+export const mockEdges: Edge[] = ${JSON.stringify(mockEdges, null, 2)};
+
+export const mockMembers: TeamMember[] = ${JSON.stringify(members, null, 2)};
+
+export const mockCommunityFeedbacks: CommunityFeedback[] = ${JSON.stringify(communityFeedbacks, null, 2)};
+`;
+    const blob = new Blob([fileContent], { type: 'text/typescript;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement('a');
     anchor.href = url;
-    anchor.download = 'mockData.generated.json';
+    anchor.download = 'mockData.ts';
     document.body.appendChild(anchor);
     anchor.click();
     document.body.removeChild(anchor);
@@ -1018,7 +1056,6 @@ function App() {
           {
             id: `cf-${Date.now()}`,
             user: fullName,
-            rating: 5,
             comment: feedbackText,
             createdAt: new Date().toISOString().slice(0, 16).replace('T', ' ')
           },
@@ -1193,7 +1230,7 @@ function App() {
             </div>
             <div className="detailInfo">
               <section className="card detailHeroCard">
-                <h3>{(detailNode.rating ?? 0).toFixed(1)} / 5</h3>
+                <h3>{detailNode.label}</h3>
                 <p>{t.convenient}</p>
                 <div className="detailBadgeRow">
                   <span className="statusBadge">{getTypeLabel(detailNode.type, language)}</span>
@@ -1213,7 +1250,6 @@ function App() {
                 </article>
                 <article>
                   <h4>{t.highlights}</h4>
-                  <p>{(detailNode.rating ?? 0).toFixed(1)} / 5</p>
                   <p>{t.coordsPrefix}: {detailNode.lat}, {detailNode.lng}</p>
                 </article>
               </section>
@@ -1417,7 +1453,7 @@ function App() {
                       {item.avatar ? <img src={item.avatar} alt={item.user} className="communityFeedbackAvatar" /> : <span className="communityFeedbackAvatar fallback">U</span>}
                       <div>
                         <strong>{item.user}</strong>
-                        <span>{item.rating}/5 • {item.createdAt}</span>
+                        <span>{item.createdAt}</span>
                       </div>
                     </div>
                     <p>{item.comment}</p>
@@ -1489,7 +1525,6 @@ function App() {
                     <th>{t.longitude}</th>
                     <th>Mở</th>
                     <th>Đóng</th>
-                    <th>Rating</th>
                     <th>{t.actions}</th>
                   </tr>
                 </thead>
@@ -1504,9 +1539,18 @@ function App() {
                       <td>{node.lng}</td>
                       <td>{node.openingHour}</td>
                       <td>{node.closingHour}</td>
-                      <td>{node.rating}</td>
                       <td className="adminActionCell">
-                        <button type="button" className="neutralBtn" onClick={() => openEditNodeEditor(node)}>{t.edit}</button>
+                        <button
+                          type="button"
+                          className="neutralBtn"
+                          onClick={(event) => {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            openEditNodeEditor(node);
+                          }}
+                        >
+                          {t.edit}
+                        </button>
                         <button type="button" className="dangerBtn" onClick={() => deleteNode(node.id)}>{t.delete}</button>
                       </td>
                     </tr>
@@ -1534,7 +1578,17 @@ function App() {
                       <td>{member.bio}</td>
                       <td>{member.avatar}</td>
                       <td className="adminActionCell">
-                        <button type="button" className="neutralBtn" onClick={() => openEditMemberEditor(member, index)}>{t.edit}</button>
+                        <button
+                          type="button"
+                          className="neutralBtn"
+                          onClick={(event) => {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            openEditMemberEditor(member, index);
+                          }}
+                        >
+                          {t.edit}
+                        </button>
                         <button type="button" className="dangerBtn" onClick={() => deleteMember(index)}>{t.delete}</button>
                       </td>
                     </tr>
@@ -1551,18 +1605,27 @@ function App() {
             </div>
             <div className="adminTableWrap">
               <table>
-                <thead><tr><th>ID</th><th>Avatar</th><th>User</th><th>Rating</th><th>Comment</th><th>Date</th><th>{t.actions}</th></tr></thead>
+                <thead><tr><th>ID</th><th>Avatar</th><th>User</th><th>Comment</th><th>Date</th><th>{t.actions}</th></tr></thead>
                 <tbody>
                   {communityFeedbacks.map((item) => (
                     <tr key={item.id}>
                       <td>{item.id}</td>
                       <td>{item.avatar}</td>
                       <td>{item.user}</td>
-                      <td>{item.rating}</td>
                       <td>{item.comment}</td>
                       <td>{item.createdAt}</td>
                       <td className="adminActionCell">
-                        <button type="button" className="neutralBtn" onClick={() => openEditCommunityFeedbackEditor(item)}>{t.edit}</button>
+                        <button
+                          type="button"
+                          className="neutralBtn"
+                          onClick={(event) => {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            openEditCommunityFeedbackEditor(item);
+                          }}
+                        >
+                          {t.edit}
+                        </button>
                         <button type="button" className="dangerBtn" onClick={() => deleteCommunityFeedback(item.id)}>{t.delete}</button>
                       </td>
                     </tr>
@@ -1585,16 +1648,15 @@ function App() {
                   <>
                     <h4>{t.locationEditor}</h4>
                     <div className="adminEditorGrid">
-                      <input value={nodeEditor.id} onChange={(event) => setNodeEditor((current) => (current ? { ...current, id: event.target.value } : current))} />
-                      <input value={nodeEditor.label} onChange={(event) => setNodeEditor((current) => (current ? { ...current, label: event.target.value } : current))} />
-                      <input value={nodeEditor.type} onChange={(event) => setNodeEditor((current) => (current ? { ...current, type: event.target.value } : current))} />
-                      <input value={nodeEditor.image} onChange={(event) => setNodeEditor((current) => (current ? { ...current, image: event.target.value } : current))} />
-                      <input value={nodeEditor.lat} onChange={(event) => setNodeEditor((current) => (current ? { ...current, lat: Number(event.target.value) || current.lat } : current))} />
-                      <input value={nodeEditor.lng} onChange={(event) => setNodeEditor((current) => (current ? { ...current, lng: Number(event.target.value) || current.lng } : current))} />
-                      <input value={nodeEditor.openingHour} onChange={(event) => setNodeEditor((current) => (current ? { ...current, openingHour: event.target.value } : current))} />
-                      <input value={nodeEditor.closingHour} onChange={(event) => setNodeEditor((current) => (current ? { ...current, closingHour: event.target.value } : current))} />
-                      <input value={nodeEditor.rating} onChange={(event) => setNodeEditor((current) => (current ? { ...current, rating: Number(event.target.value) || current.rating } : current))} />
-                      <input value={nodeEditor.descriptionVi} onChange={(event) => setNodeEditor((current) => (current ? { ...current, descriptionVi: event.target.value } : current))} />
+                      <label className="adminField"><span>ID</span><input value={nodeEditor.id} onChange={(event) => setNodeEditor((current) => (current ? { ...current, id: event.target.value } : current))} /></label>
+                      <label className="adminField"><span>Tên điểm</span><input value={nodeEditor.label} onChange={(event) => setNodeEditor((current) => (current ? { ...current, label: event.target.value } : current))} /></label>
+                      <label className="adminField"><span>Loại</span><input value={nodeEditor.type} onChange={(event) => setNodeEditor((current) => (current ? { ...current, type: event.target.value } : current))} /></label>
+                      <label className="adminField"><span>{t.image}</span><input value={nodeEditor.image} onChange={(event) => setNodeEditor((current) => (current ? { ...current, image: event.target.value } : current))} /></label>
+                      <label className="adminField"><span>{t.latitude}</span><input value={nodeEditor.lat} onChange={(event) => setNodeEditor((current) => (current ? { ...current, lat: Number(event.target.value) || current.lat } : current))} /></label>
+                      <label className="adminField"><span>{t.longitude}</span><input value={nodeEditor.lng} onChange={(event) => setNodeEditor((current) => (current ? { ...current, lng: Number(event.target.value) || current.lng } : current))} /></label>
+                      <label className="adminField"><span>Mở cửa</span><input value={nodeEditor.openingHour} onChange={(event) => setNodeEditor((current) => (current ? { ...current, openingHour: event.target.value } : current))} /></label>
+                      <label className="adminField"><span>Đóng cửa</span><input value={nodeEditor.closingHour} onChange={(event) => setNodeEditor((current) => (current ? { ...current, closingHour: event.target.value } : current))} /></label>
+                      <label className="adminField"><span>Mô tả</span><input value={nodeEditor.descriptionVi} onChange={(event) => setNodeEditor((current) => (current ? { ...current, descriptionVi: event.target.value } : current))} /></label>
                     </div>
                     <div className="adminEditorActions">
                       <button type="button" className="neutralBtn" onClick={() => setNodeEditor(null)}>{t.cancel}</button>
@@ -1624,7 +1686,6 @@ function App() {
                       <input value={communityFeedbackEditor.id} onChange={(event) => setCommunityFeedbackEditor((current) => (current ? { ...current, id: event.target.value } : current))} />
                       <input value={communityFeedbackEditor.avatar ?? ''} onChange={(event) => setCommunityFeedbackEditor((current) => (current ? { ...current, avatar: event.target.value } : current))} />
                       <input value={communityFeedbackEditor.user} onChange={(event) => setCommunityFeedbackEditor((current) => (current ? { ...current, user: event.target.value } : current))} />
-                      <input value={communityFeedbackEditor.rating} onChange={(event) => setCommunityFeedbackEditor((current) => (current ? { ...current, rating: Number(event.target.value) || current.rating } : current))} />
                       <input value={communityFeedbackEditor.createdAt} onChange={(event) => setCommunityFeedbackEditor((current) => (current ? { ...current, createdAt: event.target.value } : current))} />
                       <input value={communityFeedbackEditor.comment} onChange={(event) => setCommunityFeedbackEditor((current) => (current ? { ...current, comment: event.target.value } : current))} />
                     </div>
